@@ -10,14 +10,14 @@ function menu_load()
   }
 end
 
-
+---------------------------
 function menu_update(dt)
 end
+---------------------------
 
-
+------------------------------------------
 function love.keypressed(key)
 
-  -- MENU CONTROLS
   if gameState == "menu" then
 
     if key == "down" then
@@ -37,7 +37,7 @@ function love.keypressed(key)
     end
 
 
-  -- OTHER STATES
+
   else
     if key == "escape" then
       gameState = "menu"
@@ -50,18 +50,16 @@ function love.keypressed(key)
   end
 
 end
-
+------------------------------------------------------
 
 function menu_draw()
   love.graphics.setFont(love.graphics.newFont(24))
 
   if gameState == "menu" then
 
-    -- Title
     love.graphics.setColor(1,1,1,1)
     love.graphics.printf("BlindScribe", 20, 100, love.graphics.getWidth(), "center")
 
-    -- Menu items
     for i, item in ipairs(menuItems) do
       local y = 200 + (i - 1) * 40
 
@@ -74,7 +72,7 @@ function menu_draw()
       end
     end
 
-
+----------------------------------------------------------------------------------------------
   elseif gameState == "newGame" then
     love.graphics.setColor(1,0,0,1)
     love.graphics.printf("New Game Insert", 0, 300, love.graphics.getWidth(),"center")
@@ -94,5 +92,5 @@ function menu_draw()
     love.graphics.setColor(1,0,0,1)
     love.graphics.printf("Press ENTER to quit or ESC to return", 0, 350, love.graphics.getWidth(),"center")
   end
-
+------------------------------------------------------------------------------------------------
 end

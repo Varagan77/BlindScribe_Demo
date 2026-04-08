@@ -1,5 +1,5 @@
 require("menu")
-
+require("player")
 function love.load()
   if menu_load then menu_load() end
 end

@@ -1,8 +1,30 @@
-function player_load()   
+function player_load()
+	player = {
+		grid_x = 256,
+		grid_y = 256,
+		act_x = 200,
+		act_y = 200,
+		speed = 10
+	}
 end
 
-function player_update(dt)
+function  player_update(dt)
+	player.act_y = player.act_y - ((player.act_y - player.grid_y) * player.speed * dt)
+	player.act_x = player.act_x - ((player.act_x - player.grid_x) * player.speed * dt)
 end
 
-function player_draw()
+function  player_draw()
+	love.graphics.rectangle("fill", player.act_x, player.act_y, 32, 32)
+end
+
+function  player_keypressed(key)
+	if key == "up" then
+		player.grid_y = player.grid_y - 32
+	elseif key == "down" then
+		player.grid_y = player.grid_y + 32
+	elseif key == "left" then
+		player.grid_x = player.grid_x - 32
+	elseif key == "right" then
+		player.grid_x = player.grid_x + 32
+	end
 end
