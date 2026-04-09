@@ -17,14 +17,22 @@ function player_draw()
 	love.graphics.rectangle("fill", player.act_x, player.act_y, 32, 32)
 end
 
-function player_keypressed(key)
+function player_keypressed(key) --testmap from grid, collison working!
 	if key == "up" then
-		player.grid_y = player.grid_y - 32
+		if testMap(0, -1) then
+			player.grid_y = player.grid_y - 32
+		end
 	elseif key == "down" then
-		player.grid_y = player.grid_y + 32
+		if testMap(0, 1) then
+			player.grid_y = player.grid_y + 32
+		end
 	elseif key == "left" then
-		player.grid_x = player.grid_x - 32
+		if testMap(-1, 0) then
+			player.grid_x = player.grid_x - 32
+		end
 	elseif key == "right" then
-		player.grid_x = player.grid_x + 32
+		if testMap(1, 0) then
+			player.grid_x = player.grid_x + 32
+		end
 	end
 end
