@@ -10,47 +10,31 @@ function menu_load()
   }
 end
 
----------------------------
 function menu_update(dt)
 end
----------------------------
 
-------------------------------------------
-function love.keypressed(key)
+
+function menu_keypressed(key)
 
   if gameState == "menu" then
 
     if key == "down" then
-      selectedIndex = selectedIndex + 1
-      if selectedIndex > #menuItems then
-        selectedIndex = 1
-      end
+      selectedIndex = selectedIndex % #menuItems + 1
 
     elseif key == "up" then
-      selectedIndex = selectedIndex - 1
-      if selectedIndex < 1 then
-        selectedIndex = #menuItems
-      end
+      selectedIndex = (selectedIndex - 2) % #menuItems + 1
 
     elseif key == "return" then
       gameState = menuItems[selectedIndex].state
     end
 
-
-
-  else
-    if key == "escape" then
-      gameState = "menu"
-      selectedIndex = 1
-    end
-
-    if gameState == "exit" and key == "return" then
+  elseif gameState == "exit" then
+    if key == "return" then
       love.event.quit()
     end
   end
 
 end
-------------------------------------------------------
 
 function menu_draw()
   love.graphics.setFont(love.graphics.newFont(24))
@@ -64,33 +48,24 @@ function menu_draw()
       local y = 200 + (i - 1) * 40
 
       if i == selectedIndex then
-        love.graphics.setColor(1,1,0,1) -- yellow highlight
+        love.graphics.setColor(1,1,0,1)
         love.graphics.print("> " .. item.text, 20, y)
       else
-        love.graphics.setColor(1,1,1,1) -- white
+        love.graphics.setColor(1,1,1,1)
         love.graphics.print(item.text, 20, y)
       end
     end
 
-----------------------------------------------------------------------------------------------
-  elseif gameState == "newGame" then
-    love.graphics.setColor(1,0,0,1)
-    love.graphics.printf("New Game Insert", 0, 300, love.graphics.getWidth(),"center")
-    love.graphics.printf("Press ESC to return", 0, 350, love.graphics.getWidth(),"center")
-
   elseif gameState == "options" then
     love.graphics.setColor(1,0,0,1)
-    love.graphics.printf("Options Insert", 0, 300, love.graphics.getWidth(),"center")
-    love.graphics.printf("Press ESC to return", 0, 350, love.graphics.getWidth(),"center")
+    love.graphics.printf("Options Insert \n  ESC to return", 0, 300, love.graphics.getWidth(),"center")
 
   elseif gameState == "about" then
     love.graphics.setColor(1,0,0,1)
-    love.graphics.printf("About insert", 0, 300, love.graphics.getWidth(),"center")
-    love.graphics.printf("Press ESC to return", 0, 350, love.graphics.getWidth(),"center")
+    love.graphics.printf("About insert \n  ESC to return", 0, 300, love.graphics.getWidth(),"center")
 
   elseif gameState == "exit" then
     love.graphics.setColor(1,0,0,1)
     love.graphics.printf("Press ENTER to quit or ESC to return", 0, 350, love.graphics.getWidth(),"center")
   end
-------------------------------------------------------------------------------------------------
 end

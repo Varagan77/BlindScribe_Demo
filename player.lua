@@ -8,16 +8,16 @@ function player_load()
 	}
 end
 
-function  player_update(dt)
+function player_update(dt)
 	player.act_y = player.act_y - ((player.act_y - player.grid_y) * player.speed * dt)
 	player.act_x = player.act_x - ((player.act_x - player.grid_x) * player.speed * dt)
 end
 
-function  player_draw()
+function player_draw()
 	love.graphics.rectangle("fill", player.act_x, player.act_y, 32, 32)
 end
 
-function  player_keypressed(key)
+function player_keypressed(key)
 	if key == "up" then
 		player.grid_y = player.grid_y - 32
 	elseif key == "down" then
