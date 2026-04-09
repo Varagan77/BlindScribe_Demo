@@ -1,9 +1,12 @@
 require("menu")
 require("player")
+require("grid")
 
 function love.load()
   if menu_load then menu_load() end
+  if grid_load then grid_load() end
   if player_load then player_load() end
+ 
 end
 
 function love.update(dt)
@@ -16,6 +19,7 @@ end
 
 function love.draw()
   if gameState == "newGame" then
+    if grid_draw then grid_draw() end
     if player_draw then player_draw() end
   else
     if menu_draw then menu_draw() end
