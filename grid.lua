@@ -1,70 +1,99 @@
-function grid_load()   
+function grid_load()
     local mapModule = require("map")
-    map, spawnX, spawnY = mapModule.generate(25, 25)
+    map, spawnX, spawnY, carveLog = mapModule.generate(15, 15)
+
+    
+    debugMap = {}
+    for y = 1, #map do
+        debugMap[y] = {}
+        for x = 1, #map[y] do
+            debugMap[y][x] = 1  
+        end
+    end
+
+    debugStep    = 0           
+    debugTimer   = 0            
+    debugSpeed   = 0.04         
+    debugDone    = false        
 end
 
 
 function grid_update(dt)
--- yeah this still needs some work
-if map[(player.grid_y / 32) + (y or 0)][(player.grid_x / 32) + (x or 0)] == 1 then
-		return false
-	end
-	return true
+    if not debugDone then
+        debugTimer = debugTimer + dt
+        while debugTimer >= debugSpeed and debugStep < #carveLog do
+            debugTimer = debugTimer - debugSpeed
+            debugStep  = debugStep + 1
+            local step = carveLog[debugStep]
+            debugMap[step.y][step.x] = step.v
+        end
+        if debugStep >= #carveLog then
+            debugDone = true
+        end
+    end
+end
+
+
+local function drawTile(tileMap, y, x)
+    local v = tileMap[y][x]
+    local offset = (32 - 1) / 2
+
+    if v == 1 then
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", x * 32, y * 32, 32, 32)
+
+    elseif v == 0 then
+        love.graphics.setColor(0.5, 0.5, 0.5)
+        love.graphics.rectangle("fill", x * 32 + offset, y * 32 + offset, 1, 1)
+
+    elseif v == 2 then
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
+
+    elseif v == 3 then
+        love.graphics.setColor(1, 0, 0)
+        love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
+
+    elseif v == 4 then
+        love.graphics.setColor(0, 0, 1)
+        love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
+
+    elseif v == 5 then
+        love.graphics.setColor(1, 0.5, 0)
+        love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
+
+    elseif v == 6 then
+        love.graphics.setColor(0.5, 1, 1)
+        love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
+
+    elseif v == 7 then
+        love.graphics.setColor(1, 1, 0)
+        love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
+    end
 end
 
 
 function grid_draw()
-    for y = 1, #map do
-        for x = 1, #map[y] do
-            local offset = (32 - 1) / 2
+    local activeMap = debugDone and map or debugMap
 
-            if map[y][x] == 1 then
-                love.graphics.setColor(1, 1, 1) -- white (wall)
-                love.graphics.rectangle("line", x * 32, y * 32, 32, 32)
-
-            elseif map[y][x] == 0 then
-                love.graphics.setColor(0.5, 0.5, 0.5) -- gray (empty)
-                love.graphics.rectangle("fill", x * 32 + offset, y * 32 + offset, 1, 1)
-
-            elseif map[y][x] == 2 then
-                love.graphics.setColor(0, 1, 0) -- green (shop)
-                love.graphics.rectangle("fill" , x * 32, y * 32, 32, 32)
-
-            elseif map[y][x] == 3 then
-                love.graphics.setColor(1, 0, 0) -- red (enemy)
-                love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
-
-            elseif map[y][x] == 4 then
-                love.graphics.setColor(0, 0, 1) -- blue (portal in)
-                love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
-
-            elseif map[y][x] == 5 then
-                love.graphics.setColor(1, 0.5, 0) -- orange (portal out)
-                love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
-
-            elseif map[y][x] == 6 then
-                love.graphics.setColor(0.5, 1, 1) -- light blue (exit)
-                love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
-
-            elseif map[y][x] == 7 then
-                love.graphics.setColor(1, 1, 0) -- yellow (gold)
-                love.graphics.rectangle("fill", x * 32, y * 32, 32, 32)
-            end
+    for y = 1, #activeMap do
+        for x = 1, #activeMap[y] do
+            drawTile(activeMap, y, x)
         end
     end
 
-    love.graphics.setColor(1, 1, 1) -- reset color
-end
-    -- 1: Wall
-        -- 0: Empty Tile
-        -- 2: shop tile
-        -- 3: enemy tile
-        -- 4: portal in
-		-- 5: portal out 
-		-- 6 exit
-        -- 7: gold
+   
+    if not debugDone then
+        love.graphics.setColor(1, 1, 1, 0.7)
+        love.graphics.setFont(love.graphics.newFont(12))
+        love.graphics.print("Generating... " .. debugStep .. "/" .. #carveLog, 8, 8)
+    end
 
-function testMap(x, y) --collison testing
+    love.graphics.setColor(1, 1, 1)
+end
+
+
+function testMap(x, y)
     local newX = (player.grid_x / 32) + x
     local newY = (player.grid_y / 32) + y
 
@@ -72,21 +101,14 @@ function testMap(x, y) --collison testing
         return false
     end
 
-	if map[newY][newX] == 1 then
-		return false
-	end
-	return true
+    if map[newY][newX] == 1 then
+        return false
+    end
+    return true
 end
 
 
-     -- PIXEL MATH
-                -- Tile size: 32x32
-                -- Rectangle size: 1x1
-                -- Step 1: Find the difference in size
-                --   diff = tileSize - rectSize
-                -- Step 2: Divide by 2 to get offset for centering
-                --   offset = diff / 2
-                -- Step 3: Add offset to tile position
-                --   drawX = tileX + offset
-                --   drawY = tileY + offset
-                -- Step 4: Draw rectangle at centered position
+-- call this from player_keypressed to check if the reveal is done
+function gridReady()
+    return debugDone
+end
