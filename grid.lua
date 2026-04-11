@@ -1,10 +1,12 @@
 function grid_load()   
-     map = require("map")
+    local mapModule = require("map")
+    map, spawnX, spawnY = mapModule.generate(25, 25)
 end
 
 
 function grid_update(dt)
-if map[(player.grid_y / 32) + y][(player.grid_x / 32) + x] == 1 then
+-- yeah this still needs some work
+if map[(player.grid_y / 32) + (y or 0)][(player.grid_x / 32) + (x or 0)] == 1 then
 		return false
 	end
 	return true
@@ -63,7 +65,14 @@ end
         -- 7: gold
 
 function testMap(x, y) --collison testing
-	if map[(player.grid_y / 32) + y][(player.grid_x / 32) + x] == 1 then
+    local newX = (player.grid_x / 32) + x
+    local newY = (player.grid_y / 32) + y
+
+    if not map[newY] or not map[newY][newX] then
+        return false
+    end
+
+	if map[newY][newX] == 1 then
 		return false
 	end
 	return true

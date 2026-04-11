@@ -1,9 +1,9 @@
 function player_load()
 	player = {
-		grid_x = 256,
-		grid_y = 256,
-		act_x = 200,
-		act_y = 200,
+		grid_x = spawnX * 32,
+		grid_y = spawnY * 32,
+		act_x = spawnX * 32,
+		act_y = spawnY * 32,
 		speed = 10
 	}
 end
