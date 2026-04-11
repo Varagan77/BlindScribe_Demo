@@ -1,4 +1,5 @@
 function hud_draw()
+    
     if not gridReady() then return end
 
     local font = love.graphics.newFont(12)
