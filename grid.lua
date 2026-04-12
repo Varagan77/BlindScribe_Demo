@@ -108,7 +108,7 @@ function testMap(x, y)
 end
 
 
--- call this from player_keypressed to check if the reveal is done
+
 function gridReady()
     return debugDone
 end
