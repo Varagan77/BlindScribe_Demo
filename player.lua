@@ -10,12 +10,13 @@ function player_load()
 		hp = 10,
 		gold = 0,
 		damageTaken = 0,
+		movePoints = 0,      -- increments +1 per step
 		shopVisited = false,
 		portalUsed = false,
 	}
 
-	diceRoll = nil 
-	entryPopup = false 
+	diceRoll = nil
+	entryPopup = false
 	entryTimer = 0
 
 	fog_reveal(spawnX, spawnY)
@@ -26,31 +27,26 @@ function player_update(dt)
 	player.act_y = player.act_y - ((player.act_y - player.grid_y) * player.speed * dt)
 	player.act_x = player.act_x - ((player.act_x - player.grid_x) * player.speed * dt)
 
-	
 	if entryTimer > 0 then
 		entryTimer = entryTimer - dt
 	end
 
 	if not diceRoll then return end
 
-	
 	diceRoll.elapsed = diceRoll.elapsed + dt
 	local e = diceRoll.elapsed
 
-	
-
 	if e >= 4.0 then
-		diceRoll = nil 
+		diceRoll = nil
 
 	elseif e >= 0.8 and e < 3.0 then
-		
-		local progress = (e - 0.8) / (3.0 - 0.8) 
-		local interval = 0.06 + progress * 0.25 
+		local progress = (e - 0.8) / (3.0 - 0.8)
+		local interval = 0.06 + progress * 0.25
 
 		diceRoll.spinTimer = diceRoll.spinTimer + dt
 		if diceRoll.spinTimer >= interval then
 			diceRoll.spinTimer = 0
-			diceRoll.showing = love.math.random(1, 6) 
+			diceRoll.showing = love.math.random(1, 6)
 		end
 	end
 end
@@ -59,13 +55,11 @@ end
 function player_draw()
 	if not gridReady() then return end
 
-	
 	if entryPopup == false then
 		entryPopup = true
 		entryTimer = 3.5
 	end
 
-	
 	local cx = player.grid_x / 32
 	local cy = player.grid_y / 32
 	local neighbours = {
@@ -89,7 +83,7 @@ function player_draw()
 end
 
 
-function drawEntryPopup() 
+function drawEntryPopup()
 	if not entryPopup or entryTimer <= 0 then return end
 
 	local sw = love.graphics.getWidth()
@@ -116,7 +110,7 @@ function drawEntryPopup()
 end
 
 
-function drawDiceCutscene() 
+function drawDiceCutscene()
 	if not diceRoll then return end
 
 	local sw = love.graphics.getWidth()
@@ -127,43 +121,37 @@ function drawDiceCutscene()
 
 	local isGold = diceRoll.isGold
 
-	
 	local overlayAlpha = math.min(e / 0.8, 1) * 0.75
 	love.graphics.setColor(0, 0, 0, overlayAlpha)
 	love.graphics.rectangle("fill", 0, 0, sw, sh)
 
-
 	local cubeAlpha = math.min(e / 0.6, 1)
 	if cubeAlpha <= 0 then return end
 
-
 	local angle = 0
 	if e >= 0.8 and e < 3.0 then
-		local progress = (e - 0.8) / (3.0 - 0.8) 
-		local spinSpeed = 18 * (1 - progress) + 1 
-		diceRoll.angle = (diceRoll.angle or 0) + spinSpeed * (1 / 60) 
+		local progress = (e - 0.8) / (3.0 - 0.8)
+		local spinSpeed = 18 * (1 - progress) + 1
+		diceRoll.angle = (diceRoll.angle or 0) + spinSpeed * (1 / 60)
 		angle = diceRoll.angle
 	elseif e >= 3.0 then
-		angle = 0 
+		angle = 0
 	else
-		angle = 0 
+		angle = 0
 	end
 
-
 	local size = 40
-	local skew = math.sin(angle) * size * 0.4 
+	local skew = math.sin(angle) * size * 0.4
 	local sideWidth = math.abs(math.cos(angle) * size * 0.4)
 
 	if isGold then
-		love.graphics.setColor(1, 0.85, 0, cubeAlpha) 
+		love.graphics.setColor(1, 0.85, 0, cubeAlpha)
 	else
-		love.graphics.setColor(0.9, 0.1, 0.1, cubeAlpha) 
+		love.graphics.setColor(0.9, 0.1, 0.1, cubeAlpha)
 	end
 
-	
 	love.graphics.rectangle("fill", cx - size, cy - size - 10, size * 2, size * 2)
 
-	
 	if isGold then
 		love.graphics.setColor(1, 1, 0.3, cubeAlpha)
 	else
@@ -176,7 +164,6 @@ function drawDiceCutscene()
 		cx - size + skew,   cy - size - 10 - sideWidth
 	)
 
-	
 	if isGold then
 		love.graphics.setColor(0.7, 0.55, 0, cubeAlpha)
 	else
@@ -189,20 +176,18 @@ function drawDiceCutscene()
 		cx + size + skew,   cy - size - 10 - sideWidth
 	)
 
-	
 	local numText
 	local numAlpha = cubeAlpha
 	if e < 0.8 then
 		numText = "?"
 	elseif e >= 3.0 then
 		numText = tostring(diceRoll.result)
-		
 		local punchProgress = math.min((e - 3.0) / 0.2, 1)
 		local numSize = math.floor(28 + (1 - punchProgress) * 24)
 		love.graphics.setFont(love.graphics.newFont(numSize))
 		love.graphics.setColor(1, 1, 1, numAlpha)
 		love.graphics.printf(numText, cx - size, cy - size + 10, size * 2, "center")
-		numText = nil 
+		numText = nil
 	else
 		numText = tostring(diceRoll.showing)
 	end
@@ -213,7 +198,6 @@ function drawDiceCutscene()
 		love.graphics.printf(numText, cx - size, cy - size + 10, size * 2, "center")
 	end
 
-	
 	if e >= 3.5 then
 		local labelAlpha = math.min((e - 3.5) / 0.3, 1)
 		love.graphics.setFont(love.graphics.newFont(16))
@@ -226,7 +210,6 @@ function drawDiceCutscene()
 		end
 	end
 
-	
 	if e < 0.8 then
 		local suspenseAlpha = math.min(e / 0.4, 1)
 		love.graphics.setFont(love.graphics.newFont(13))
@@ -244,41 +227,31 @@ function drawDiceCutscene()
 end
 
 
-function handleTile(tileX, tileY) 
+function handleTile(tileX, tileY)
 	local tile = map[tileY][tileX]
 
-	if tile == 7 then 
+	if tile == 7 then
 		local roll = love.math.random(1, 6)
 		player.gold = player.gold + roll
 		map[tileY][tileX] = 0
-		diceRoll = {
-			isGold = true,
-			result = roll,
-			showing = 1,
-			elapsed = 0,
-			spinTimer = 0,
-			angle = 0,
-		}
+		diceRoll = { isGold = true, result = roll, showing = 1, elapsed = 0, spinTimer = 0, angle = 0 }
+		hud_log("Found gold!")
 
-	elseif tile == 3 then 
+	elseif tile == 3 then
 		local roll = love.math.random(1, 6)
 		player.hp = player.hp - roll
 		player.damageTaken = player.damageTaken + roll
-		map[tileY][tileX] = 0 
-		diceRoll = {
-			isGold = false,
-			result = roll,
-			showing = 1,
-			elapsed = 0,
-			spinTimer = 0,
-			angle = 0,
-		}
+		map[tileY][tileX] = 0
+		diceRoll = { isGold = false, result = roll, showing = 1, elapsed = 0, spinTimer = 0, angle = 0 }
+		hud_log("Attacked! -" .. roll .. " HP")
 
-	elseif tile == 2 then 
+	elseif tile == 2 then
 		player.shopVisited = true
+		hud_log("You found a shop.")
 
 	elseif tile == 4 and not player.portalUsed then
 		player.portalUsed = true
+		hud_log("Portal used!")
 		for y = 1, #map do
 			for x = 1, #map[y] do
 				if map[y][x] == 5 then
@@ -290,13 +263,13 @@ function handleTile(tileX, tileY)
 			end
 		end
 
-	elseif tile == 6 then 
+	elseif tile == 6 then
 		gameState = "win"
 	end
 end
 
 
-function player_keypressed(key) 
+function player_keypressed(key)
 	if not gridReady() then return end
 	if gameState == "win" then return end
 	if diceRoll then return end
@@ -324,6 +297,7 @@ function player_keypressed(key)
 	end
 
 	if moved then
+		player.movePoints = player.movePoints + 1
 		fog_reveal(newX, newY)
 		handleTile(newX, newY)
 	end
