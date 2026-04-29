@@ -1,40 +1,71 @@
-# BlindScribe_Demo
-The offical demo for Blind Scribe!
+# BlindScribe
+
+A procedurally generated dungeon crawler built in [LÖVE2D](https://love2d.org/).
+
+One player is the **Dungeon Master** — they can see the map. The others are **Pawns** — they can't. With a limited number of moves, Pawns must escape the dungeon alive, guided (or misled) by the DM.
 
 ---
 
-A procedurally generated dungeon crawler built in [LÖVE2D](https://love2d.org/) (Lua).
+## Running
 
-One player acts as the **Dungeon Master** they can see the map. The others are **Pawns** they can't. With a limited number of moves, the Pawns must escape the dungeon alive, guided (or misled) by the DM.
+1. Install [LÖVE2D](https://love2d.org/) 11.x
+2. Clone this repo
+3. Run from the project root:
+
+```bash
+love .
+```
 
 ---
 
-## Gameplay
+## Project Structure
 
-- **Pawns** are placed randomly in a procedurally generated dungeon
-- Movement is tile-based (up / down / left / right)
-- The map is hidden behind fog of war — tiles reveal as you step on them
-- Escape through the **Exit** tile before your moves run out
+```
+BlindScribe/
+├── main.lua              entry point, routes Love2D callbacks to systems
+├── conf.lua              window title, size, version
+│
+├── config/
+│   └── settings.lua      all tunable values in one place
+│
+├── src/
+│   ├── camera.lua        smooth lerp camera, F1 to toggle
+│   ├── fog.lua           fog of war, F2 to toggle
+│   ├── grid.lua          map renderer, generation animation, tile collision
+│   ├── hud.lua           all UI — top bar, stats panel, inventory, debug overlay
+│   ├── map.lua           procedural dungeon generation (pure module, no globals)
+│   ├── menu.lua          main menu and game state management
+│   └── player.lua        movement, tile interactions, dice cutscene
+│
+└── assets/
+    ├── fonts/
+    ├── sounds/
+    └── sprites/
+```
 
-### Tile Types
+---
 
-| Tile | Effect |
-|------|--------|
-| Empty | Safe to walk through |
-| Wall | Impassable |
-| Monster | Roll a d6 — lose that many HP |
-| Loot | Roll a d6 — gain that many gold |
-| Shop | Visit to purchase items |
-| Portal (in/out) | Teleports the pawn to the linked portal |
-| Exit | Escape the dungeon — you win |
+## Configuration
 
-### Items (planned)
+Everything tunable lives in `config/settings.lua` — no hunting through source files.
 
-Items are split into three categories, purchasable at Shop tiles:
-
-- **Wrath** — spawn temporary Monster tiles in the dungeon
-- **Spiritus** — heal your own or other Pawns' HP
-- **Kinesis** — add movement points to yourself or other Pawns
+| Key | Default | What it does |
+|-----|---------|--------------|
+| `TILE_SIZE` | 32 | Pixel size of each tile |
+| `PLAYER_SPEED` | 10 | Visual lerp speed |
+| `PLAYER_HP` | 10 | Starting HP |
+| `CAMERA_SPEED` | 6 | Camera follow speed |
+| `CAMERA_ON` | true | Camera enabled at start |
+| `FOG_ON` | true | Fog enabled at start |
+| `LOG_DURATION` | 4.0 | Seconds HUD messages stay on screen |
+| `MAP_WIDTH` | 15 | Dungeon width in tiles |
+| `MAP_HEIGHT` | 15 | Dungeon height in tiles |
+| `ENEMY_MIN/MAX` | 3–8 | Enemy count range |
+| `GOLD_MIN/MAX` | 3–8 | Gold pile count range |
+| `ROOM_MIN/MAX` | 3–6 | Number of carved rooms |
+| `SHOP_COUNT` | 2 | Number of shop tiles |
+| `DEBUG_VISIBLE` | true | Debug overlay on at start |
+| `DEBUG_ANIM_SPEED` | 0.04 | Generation animation step rate |
 
 ---
 
@@ -44,75 +75,34 @@ Items are split into three categories, purchasable at Shop tiles:
 |-----|--------|
 | Arrow keys | Move |
 | ESC | Return to menu |
-| F1 | Toggle camera follow |
+| F1 | Toggle camera |
 | F2 | Toggle fog of war |
 | F3 | Toggle debug overlay |
-| ENTER | Confirm (menus / win screen) |
+| ENTER | Confirm |
 
 ---
 
-## Running the Game
+## Tile Values
 
-1. Install [LÖVE2D](https://love2d.org/) (tested on 11.x)
-2. Clone this repo
-3. Run from the project root:
-
-```bash
-love .
-```
-
-Or drag the project folder onto the LÖVE executable.
-
----
-
-## Project Structure
-
-```
-BlindScribe/
-├── main.lua        # Entry point — wires up all systems
-├── menu.lua        # Main menu and game state management
-├── map.lua         # Procedural dungeon generation (recursive backtracker + rooms)
-├── grid.lua        # Map rendering and tile collision
-├── player.lua      # Player movement, tile interaction, dice cutscene
-├── camera.lua      # Smooth camera follow with lerp
-├── fog.lua         # Fog of war — tiles reveal on visit
-├── hud.lua         # UI layout: top bar, stats panel, inventory, debug overlay
-└── assets/         # Sprites, fonts, sounds (WIP)
-```
-
----
-
-## How the Dungeon Generates
-
-1. A grid is filled with walls
-2. A **recursive backtracker** carves a perfect maze from a starting cell
-3. Random **rooms** are punched in to open up the space
-4. Special tiles (exit, portals, shops, enemies, gold) are placed on valid empty cells
-5. The player spawns on a remaining empty cell
-
-The generation is animated on load — you can watch the maze carve itself.
+| Value | Tile |
+|-------|------|
+| 0 | Empty |
+| 1 | Wall |
+| 2 | Shop |
+| 3 | Enemy |
+| 4 | Portal in |
+| 5 | Portal out |
+| 6 | Exit |
+| 7 | Gold |
 
 ---
 
 ## Roadmap
 
 - [ ] Multiplayer / Dungeon Master mode
-- [ ] Full shop system with Wrath / Spiritus / Kinesis items
-- [ ] Inventory system (slots are in the HUD, logic TBD)
-- [ ] Pawn-to-Pawn trading on shared empty tiles
-- [ ] DM abilities (Pawn Swap, Tile Swap, Inflation, Mutation)
-- [ ] Sound effects and music
+- [ ] Shop system — Wrath, Spiritus, Kinesis items
+- [ ] Inventory logic (slots are in the HUD)
+- [ ] Pawn-to-Pawn trading on shared tiles
+- [ ] DM abilities — Pawn Swap, Tile Swap, Inflation, Mutation
+- [ ] Sound and music
 - [ ] Custom dungeon editor
-
----
-
-## Built With
-
-- [LÖVE2D](https://love2d.org/) — Lua game framework
-- Pure Lua — no external libraries
-
----
-
-## License
-
-WIP — license TBD.
