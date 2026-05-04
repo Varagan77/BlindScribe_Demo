@@ -1,5 +1,7 @@
 local Cfg = require("config.settings")
 
+local INV_SLOTS = 12
+
 function player_load()
 	local ts = Cfg.TILE_SIZE
 	player = {
@@ -15,11 +17,25 @@ function player_load()
 		movePoints  = 0,
 		shopVisited = false,
 		portalUsed  = false,
+
+		inventory   = {},
+		onShopTile  = false,
 	}
+
+	for i = 1, INV_SLOTS do
+		player.inventory[i] = nil
+	end
 
 	diceRoll   = nil
 	entryPopup = false
 	entryTimer = 0
+
+	-- damage pulse overlay on player tile
+	damagePulse = 0
+
+	-- atmospheric bottom-left message
+	atmosMsg   = ""
+	atmosTimer = 0
 
 	fog_reveal(spawnX, spawnY)
 end
@@ -30,6 +46,50 @@ function player_update(dt)
 
 	if entryTimer > 0 then
 		entryTimer = entryTimer - dt
+	end
+
+	if damagePulse > 0 then
+		damagePulse = math.max(0, damagePulse - dt)
+	end
+
+	if atmosTimer > 0 then
+		atmosTimer = math.max(0, atmosTimer - dt)
+	end
+
+	-- Scan adjacent + two-step tiles for atmosphere messages
+	-- Only updates when not in a dice cutscene
+	if not diceRoll and gridReady() then
+		local ts  = Cfg.TILE_SIZE
+		local px  = player.grid_x / ts
+		local py  = player.grid_y / ts
+		local foundEnemy = false
+		local foundGold  = false
+
+		local scan = {
+			{ px,     py - 1 }, { px,     py + 1 },
+			{ px - 1, py     }, { px + 1, py     },
+			{ px - 1, py - 1 }, { px + 1, py - 1 },
+			{ px - 1, py + 1 }, { px + 1, py + 1 },
+		}
+		for _, n in ipairs(scan) do
+			local nx, ny = n[1], n[2]
+			if map[ny] and map[ny][nx] then
+				local v = map[ny][nx]
+				if v == 3 then foundEnemy = true end
+				if v == 7 then foundGold  = true end
+			end
+		end
+
+		-- Only set a new message if the timer has expired, so it doesn't flicker
+		if atmosTimer <= 0 then
+			if foundEnemy then
+				atmosMsg   = "something stirs in the dark..."
+				atmosTimer = 2.2
+			elseif foundGold then
+				atmosMsg   = "something glimmers nearby..."
+				atmosTimer = 2.2
+			end
+		end
 	end
 
 	if not diceRoll then return end
@@ -79,6 +139,14 @@ function player_draw()
 
 	love.graphics.setColor(1, 1, 1)
 	love.graphics.rectangle("fill", player.act_x, player.act_y, ts, ts)
+
+	-- Damage pulse: red flash on player tile that fades out
+	if damagePulse > 0 then
+		local a = (damagePulse / 1.8) * 0.75
+		love.graphics.setColor(1, 0.05, 0.05, a)
+		love.graphics.rectangle("fill", player.act_x, player.act_y, ts, ts)
+	end
+
 	love.graphics.setColor(1, 1, 1)
 end
 
@@ -233,14 +301,17 @@ function handleTile(tileX, tileY)
 		player.damageTaken  = player.damageTaken + roll
 		map[tileY][tileX]   = 0
 		diceRoll            = { isGold = false, result = roll, showing = 1, elapsed = 0, spinTimer = 0, angle = 0 }
+		damagePulse         = 1.8
 		hud_log("Attacked! -" .. roll .. " HP")
 
 	elseif tile == 2 then
 		player.shopVisited = true
-		hud_log("You found a shop.")
+		player.onShopTile  = true
+		hud_log("A shop. Press [E] to enter.")
 
 	elseif tile == 4 and not player.portalUsed then
-		player.portalUsed = true
+		player.portalUsed  = true
+		player.onShopTile  = false
 		hud_log("Portal used!")
 		local ts = Cfg.TILE_SIZE
 		for y = 1, #map do
@@ -256,13 +327,60 @@ function handleTile(tileX, tileY)
 
 	elseif tile == 6 then
 		gameState = "win"
+
+	else
+		player.onShopTile = false
 	end
+end
+
+function applyItem(item)
+	if item.id == "spiritus_heal" then
+		player.hp = math.min(player.hp + 3, Cfg.PLAYER_HP)
+		hud_log("+3 HP from " .. item.name)
+		return true
+
+	elseif item.id == "spiritus_revive" then
+		player.hp = math.min(player.hp + 6, Cfg.PLAYER_HP)
+		hud_log("+6 HP from " .. item.name)
+		return true
+
+	elseif item.id == "kinesis_step" then
+		player.movePoints = player.movePoints + 3
+		hud_log("+3 moves from " .. item.name)
+		return true
+
+	elseif item.id == "kinesis_dash" then
+		player.movePoints = player.movePoints + 6
+		hud_log("+6 moves from " .. item.name)
+		return true
+
+	elseif item.id == "wrath_spawn" then
+		hud_log(item.name .. " [WIP]")
+		return true
+
+	elseif item.id == "wrath_curse" then
+		hud_log(item.name .. " [WIP]")
+		return true
+	end
+
+	return false
 end
 
 function player_keypressed(key)
 	if not gridReady() then return end
 	if gameState == "win" then return end
 	if diceRoll then return end
+
+	if key == "e" then
+		if shop_isOpen() then
+			shop_close()
+		elseif player.onShopTile then
+			shop_open()
+		end
+		return
+	end
+
+	if shop_isOpen() then return end
 
 	local ts    = Cfg.TILE_SIZE
 	local moved = false

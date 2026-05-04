@@ -1,6 +1,37 @@
 local Cfg = require("config.settings")
 
+local tileImage = nil
+local tileQuads = {}
+local SHEET_TS  = 16   -- source tile size in the PNG
+local SCALE     = Cfg.TILE_SIZE / SHEET_TS  -- e.g. 32/16 = 2
+
+local function makeQuad(col, row)
+	return love.graphics.newQuad(
+		col * SHEET_TS,
+		row * SHEET_TS,
+		SHEET_TS, SHEET_TS,
+		tileImage:getDimensions()
+	)
+end
+
 function grid_load()
+	-- Load tileset once
+	if not tileImage then
+		tileImage = love.graphics.newImage("assets/sprites/dungeon_.png")
+		tileImage:setFilter("nearest", "nearest")  -- keeps pixels crisp when scaled up
+
+		tileQuads = {
+			[0] = makeQuad(1,  1),   -- floor
+			[1] = makeQuad( 0,  4),   -- wall
+			[2] = makeQuad(11,  7),   -- shop
+			[3] = makeQuad(11,  4),   -- enemy
+			[4] = makeQuad( 3, 11),   -- portal in
+			[5] = makeQuad( 2, 11),   -- portal out
+			[6] = makeQuad(11, 10),   -- exit
+			[7] = makeQuad(13, 11),   -- gold
+		}
+	end
+
 	local mapModule = require("src.map")
 	map, spawnX, spawnY, carveLog = mapModule.generate(Cfg.MAP_WIDTH, Cfg.MAP_HEIGHT)
 
@@ -37,35 +68,13 @@ function grid_draw()
 	local ts        = Cfg.TILE_SIZE
 	local activeMap = debugDone and map or debugMap
 
+	love.graphics.setColor(1, 1, 1)
 	for y = 1, #activeMap do
 		for x = 1, #activeMap[y] do
-			local v      = activeMap[y][x]
-			local offset = (ts - 1) / 2
-
-			if v == 1 then
-				love.graphics.setColor(1, 1, 1)
-				love.graphics.rectangle("line", x * ts, y * ts, ts, ts)
-			elseif v == 0 then
-				love.graphics.setColor(0.5, 0.5, 0.5)
-				love.graphics.rectangle("fill", x * ts + offset, y * ts + offset, 1, 1)
-			elseif v == 2 then
-				love.graphics.setColor(0, 1, 0)
-				love.graphics.rectangle("fill", x * ts, y * ts, ts, ts)
-			elseif v == 3 then
-				love.graphics.setColor(1, 0, 0)
-				love.graphics.rectangle("fill", x * ts, y * ts, ts, ts)
-			elseif v == 4 then
-				love.graphics.setColor(0, 0, 1)
-				love.graphics.rectangle("fill", x * ts, y * ts, ts, ts)
-			elseif v == 5 then
-				love.graphics.setColor(1, 0.5, 0)
-				love.graphics.rectangle("fill", x * ts, y * ts, ts, ts)
-			elseif v == 6 then
-				love.graphics.setColor(0.5, 1, 1)
-				love.graphics.rectangle("fill", x * ts, y * ts, ts, ts)
-			elseif v == 7 then
-				love.graphics.setColor(1, 1, 0)
-				love.graphics.rectangle("fill", x * ts, y * ts, ts, ts)
+			local v = activeMap[y][x]
+			local q = tileQuads[v]
+			if q then
+				love.graphics.draw(tileImage, q, x * ts, y * ts, 0, SCALE, SCALE)
 			end
 		end
 	end
@@ -89,6 +98,11 @@ function testMap(x, y)
 	end
 
 	return map[newY][newX] ~= 1
+end
+
+function grid_unload()
+	tileImage = nil
+	tileQuads = {}
 end
 
 function gridReady()

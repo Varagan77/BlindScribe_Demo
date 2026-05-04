@@ -4,6 +4,7 @@ require("src.grid")
 require("src.hud")
 require("src.camera")
 require("src.fog")
+require("src.shop")
 
 function love.load()
 	menu_load()
@@ -30,7 +31,9 @@ function love.update(dt)
 end
 
 function love.draw()
-	if gameState == "newGame" or gameState == "win" then
+	if gameState == "win" then
+		hud_draw()
+	elseif gameState == "newGame" then
 		hud_draw()
 
 		local mr = hud_getMapRect()
@@ -44,8 +47,15 @@ function love.draw()
 
 		drawEntryPopup()
 		drawDiceCutscene()
+		shop_draw()
 	else
 		menu_draw()
+	end
+end
+
+function love.mousepressed(mx, my, btn)
+	if gameState == "newGame" then
+		shop_mousepressed(mx, my, btn)
 	end
 end
 
@@ -55,6 +65,7 @@ function love.keypressed(key)
 		camera_keypressed(key)
 		fog_keypressed(key)
 		hud_keypressed(key)
+		shop_keypressed(key)
 	elseif gameState == "win" then
 		hud_keypressed(key)
 	else
@@ -62,7 +73,11 @@ function love.keypressed(key)
 	end
 
 	if key == "escape" and gameState ~= "win" then
-		gameState     = "menu"
-		selectedIndex = 1
+		if shop_isOpen() then
+			shop_close()
+		else
+			gameState     = "menu"
+			selectedIndex = 1
+		end
 	end
 end

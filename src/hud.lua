@@ -24,6 +24,15 @@ local C = {
 	hp_bg     = { 0.15, 0.15, 0.18 },
 	debug_hdr = { 0.40, 1.00, 0.85 },
 	debug_warn= { 1.00, 0.85, 0.30 },
+	wrath     = { 1.00, 0.30, 0.30 },
+	spiritus  = { 0.35, 0.85, 0.75 },
+	kinesis   = { 0.70, 0.55, 1.00 },
+}
+
+local CATEGORY_COL = {
+	Wrath    = "wrath",
+	Spiritus = "spiritus",
+	Kinesis  = "kinesis",
 }
 
 local function setC(t, a)
@@ -76,6 +85,7 @@ function hud_update(dt)
 	if HUD.logTimer > 0 then
 		HUD.logTimer = HUD.logTimer - dt
 	end
+	shop_update(dt)
 end
 
 function hud_draw()
@@ -194,13 +204,37 @@ function hud_draw()
 
 	for row = 0, 2 do
 		for col = 0, cols - 1 do
-			local sx2 = startX + col * (slotSize + slotPad)
-			local sy2 = startY + row * (slotSize + slotPad)
+			local slotIdx = row * cols + col + 1
+			local sx2     = startX + col * (slotSize + slotPad)
+			local sy2     = startY + row * (slotSize + slotPad)
+			local item    = player.inventory[slotIdx]
+
 			setC(C.hp_bg)
 			love.graphics.rectangle("fill", sx2, sy2, slotSize, slotSize, 4, 4)
 			setC(C.border)
 			love.graphics.rectangle("line", sx2, sy2, slotSize, slotSize, 4, 4)
+
+			if item then
+				local ckey = CATEGORY_COL[item.category]
+				local icol = ckey and C[ckey] or C.text
+				setC(icol, 0.30)
+				love.graphics.rectangle("fill", sx2 + 2, sy2 + 2, slotSize - 4, slotSize - 4, 3, 3)
+				setC(icol)
+				love.graphics.setFont(love.graphics.newFont(11))
+				love.graphics.printf(item.icon, sx2, sy2 + 9, slotSize, "center")
+			end
+
+			local keyLabel = slotIdx <= 9 and tostring(slotIdx) or "0"
+			setC(C.label, 0.6)
+			love.graphics.setFont(love.graphics.newFont(8))
+			love.graphics.print(keyLabel, sx2 + 2, sy2 + 2)
 		end
+	end
+
+	if player.onShopTile and not shop_isOpen() then
+		setC(C.accent, 0.9)
+		love.graphics.setFont(love.graphics.newFont(10))
+		love.graphics.printf("[E] Enter Shop", rcX, invY + invH - 18, rcW, "center")
 	end
 
 	if gameState == "win" then
@@ -224,6 +258,16 @@ function hud_draw()
 
 		setC(C.label)
 		love.graphics.printf("Press ENTER to return to menu", 0, sh / 2 + 100, love.graphics.getWidth(), "center")
+	end
+
+	-- Atmospheric message — bottom left of map area, fades in and out
+	if gameState == "newGame" and atmosTimer and atmosTimer > 0 and atmosMsg ~= "" then
+		local a  = math.min(atmosTimer, 1) * 0.75
+		local mx = mr.x + 10
+		local my = mr.y + mr.h - 26
+		setC({ 0.55, 0.55, 0.60 }, a)
+		love.graphics.setFont(love.graphics.newFont(11))
+		love.graphics.print(atmosMsg, mx, my)
 	end
 
 	if HUD.debugVisible and gridReady() then
@@ -265,6 +309,16 @@ function hud_keypressed(key)
 		HUD.debugVisible = not HUD.debugVisible
 	end
 
+	if gameState == "newGame" then
+		local numMap = {
+			["1"]=1, ["2"]=2,  ["3"]=3,  ["4"]=4,
+			["5"]=5, ["6"]=6,  ["7"]=7,  ["8"]=8,
+			["9"]=9, ["0"]=10,
+		}
+		local slot = numMap[key]
+		if slot then hud_useSlot(slot) end
+	end
+
 	if gameState == "win" and key == "return" then
 		gameState     = "menu"
 		selectedIndex = 1
@@ -277,4 +331,20 @@ end
 
 function hud_getMapRect()
 	return HUD.mapRect
+end
+
+function hud_mousepressed(mx, my, btn)
+end
+
+function hud_useSlot(slotIdx)
+	if shop_isOpen() then return end
+	if gameState ~= "newGame" then return end
+	local item = player.inventory[slotIdx]
+	if not item then
+		hud_log("Slot " .. slotIdx .. " is empty.")
+		return
+	end
+	if applyItem(item) then
+		player.inventory[slotIdx] = nil
+	end
 end
