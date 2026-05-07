@@ -1,7 +1,7 @@
 require("lib.states.menu")
 require("lib.entities.player")
 require("lib.core.grid")
-require("lib.core.hud")
+require("lib.core.player_hud")
 require("lib.core.camera")
 require("lib.core.fog")
 
