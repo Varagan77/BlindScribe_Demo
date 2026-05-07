@@ -1,9 +1,9 @@
-require("menu")
-require("player")
-require("grid")
-require("hud")
-require("camera")
-require("fog")
+require("lib.states.menu")
+require("lib.entities.player")
+require("lib.core.grid")
+require("lib.core.hud")
+require("lib.core.camera")
+require("lib.core.fog")
 
 function love.load()
   if menu_load  then menu_load()   end

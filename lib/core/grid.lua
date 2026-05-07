@@ -1,5 +1,5 @@
 function grid_load()
-	local mapModule = require("map")
+	local mapModule = require("lib.states.map")
 	map, spawnX, spawnY, carveLog = mapModule.generate(15, 15)
 
 	
