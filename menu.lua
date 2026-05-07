@@ -3,7 +3,8 @@ function menu_load()
   selectedIndex = 1
 
   menuItems = {
-    {text = "New Game", state = "newGame"},
+    {text = "Single Player", state = "newGame"},
+    {text = "Multiplayer", state = "multiPlayer"},
     {text = "Options", state = "options"},
     {text = "About", state = "about"},
     {text = "Exit", state = "exit"}
@@ -56,16 +57,20 @@ function menu_draw()
       end
     end
 
+     elseif gameState == "multiPlayer" then
+    love.graphics.setColor(1,0,0,1)
+    love.graphics.printf("WIP \n  ESC to return", 0, 300, love.graphics.getWidth(),"center")
+
   elseif gameState == "options" then
     love.graphics.setColor(1,0,0,1)
-    love.graphics.printf("Options Insert \n  ESC to return", 0, 300, love.graphics.getWidth(),"center")
+    love.graphics.printf("WIP \n  ESC to return", 0, 300, love.graphics.getWidth(),"center")
 
   elseif gameState == "about" then
     love.graphics.setColor(1,0,0,1)
-    love.graphics.printf("About insert \n  ESC to return", 0, 300, love.graphics.getWidth(),"center")
+    love.graphics.printf("WIP \n  ESC to return", 0, 300, love.graphics.getWidth(),"center")
 
   elseif gameState == "exit" then
     love.graphics.setColor(1,0,0,1)
-    love.graphics.printf("Press ENTER to quit or ESC to return", 0, 350, love.graphics.getWidth(),"center")
+    love.graphics.printf("Press ENTER to quit or ESC to return to menu", 0, 350, love.graphics.getWidth(),"center")
   end
 end

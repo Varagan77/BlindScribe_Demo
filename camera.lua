@@ -24,7 +24,7 @@ function camera_update(dt)
 	local tx = player.act_x - sw / 2 + 16
 	local ty = player.act_y - sh / 2 + 16
 
-	-- slowly lerp towards it
+	
 	camera.x = camera.x + (tx - camera.x) * camera.speed * dt
 	camera.y = camera.y + (ty - camera.y) * camera.speed * dt
 end

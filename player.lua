@@ -6,11 +6,11 @@ function player_load()
 		act_y = spawnY * 32,
 		speed = 10,
 
-		-- stats
+	
 		hp = 10,
 		gold = 0,
 		damageTaken = 0,
-		movePoints = 0,      -- increments +1 per step
+		movePoints = 0,      
 		shopVisited = false,
 		portalUsed = false,
 	}
