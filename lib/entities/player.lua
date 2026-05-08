@@ -26,7 +26,7 @@ function player_load()
 
 	fog_reveal(spawnX, spawnY)
 
-	playerSprite = love.graphics.newImage("assets/tiles.png")
+	playerSprite = love.graphics.newImage("assets/media/images/sheets/tiles.png")
 
 	playerQuad = love.graphics.newQuad(
     0, 32,

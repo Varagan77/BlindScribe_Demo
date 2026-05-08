@@ -10,7 +10,7 @@ function grid_load(seed)
 	map, spawnX, spawnY, carveLog = mapModule.generate(15, 15)
 
 	-- LOAD TILESET
-	tileset = love.graphics.newImage("assets/tiles.png")
+	tileset = love.graphics.newImage("assets/media/images/sheets/tiles.png")
 
 	-- CREATE QUADS
 	for i = 0, 7 do
