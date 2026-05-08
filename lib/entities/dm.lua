@@ -1,14 +1,14 @@
---wip
+
 local C = {
 	tiles = {
-		[0] = {0.18, 0.16, 0.22},   -- floor
-		[1] = {0.08, 0.07, 0.10},   -- wall
-		[2] = {0.25, 0.70, 0.45},   -- shop
-		[3] = {0.90, 0.20, 0.20},   -- enemy
-		[4] = {0.30, 0.55, 1.00},   -- portal in
-		[5] = {0.20, 0.35, 0.85},   -- portal out
-		[6] = {1.00, 0.85, 0.20},   -- exit
-		[7] = {1.00, 0.75, 0.10},   -- gold
+		[0] = {0.18, 0.16, 0.22},   
+		[1] = {0.08, 0.07, 0.10},   
+		[2] = {0.25, 0.70, 0.45},   
+		[3] = {0.90, 0.20, 0.20},   
+		[4] = {0.30, 0.55, 1.00},   
+		[5] = {0.20, 0.35, 0.85},   
+		[6] = {1.00, 0.85, 0.20},   
+		[7] = {1.00, 0.75, 0.10},   
 	},
 	floor_grid  = {0.22, 0.20, 0.28, 0.6},
 	wall        = {0.08, 0.07, 0.10},
@@ -93,7 +93,7 @@ function dm_load()
 	end
 
 	DM = {
-		-- Essence
+		
 		essence         = 100,
 		essenceMax      = 100,
 		essenceDrain    = 1.5,   
@@ -101,8 +101,8 @@ function dm_load()
 		
 		abilities       = abs,
 		selectedAbility = nil,
-		targeting       = false,   -- true when waiting for a tile click
-		hoverTile       = nil,     -- {x, y} tile under mouse cursor
+		targeting       = false,   
+		hoverTile       = nil,     
 
 		
 		pawns           = {},
@@ -134,8 +134,8 @@ function dm_computeScale()
 
 	local cols  = #map[1]
 	local rows  = #map
-	-- grid_draw draws tile (x,y) at pixel (x*32, y*32), x in [1..cols]
-	-- so world spans 32..(cols+1)*32, total = cols*32 wide (plus leading 32 pad)
+	
+	
 	local mapW  = (cols + 1) * 32
 	local mapH  = (rows + 1) * 32
 	local scaleX = mr.w / mapW
@@ -223,19 +223,19 @@ function dm_drawMap()
 		end
 	end
 
-	-- Block overlays
+	
 	local pulse = math.abs(math.sin(love.timer.getTime() * 3)) * 0.5 + 0.4
 	for _, blk in ipairs(DM.blocks) do
 		love.graphics.setColor(0.70, 0.35, 1.00, pulse)
 		love.graphics.rectangle("fill", blk.x * 32 + gap, blk.y * 32 + gap, 32 - gap, 32 - gap)
 	end
 
-	-- Hover highlight while targeting
+	
 	if DM.targeting and DM.hoverTile then
 		local hx = DM.hoverTile.x
 		local hy = DM.hoverTile.y
 		local tile = map[hy] and map[hy][hx]
-		local validTarget = (tile == 0)  -- only floor tiles are valid for Spawn
+		local validTarget = (tile == 0)  
 		if validTarget then
 			love.graphics.setColor(0.90, 0.20, 0.20, 0.55)
 			love.graphics.rectangle("fill", hx * 32 + gap, hy * 32 + gap, 32 - gap, 32 - gap)
@@ -305,7 +305,7 @@ function dm_keypressed(key)
 		if not ab then return end
 
 		if DM.targeting and DM.selectedAbility == idx then
-			-- Press same key again while targeting = cancel
+			
 			DM.selectedAbility = nil
 			DM.targeting = false
 			dm_hud_log("Ability cancelled.")
@@ -332,14 +332,14 @@ function dm_keypressed(key)
 end
 
 
--- Convert screen pixel (mx, my) to map tile (tx, ty), or nil if outside map
+
 function dm_screenToTile(mx, my)
 	if not DM or DM.scale == 0 then return nil end
 	local wx = (mx - DM.offsetX) / DM.scale
 	local wy = (my - DM.offsetY) / DM.scale
 	local tx = math.floor(wx / 32)
 	local ty = math.floor(wy / 32)
-	-- Bounds check: map uses 1-based indices, grid_draw draws at x*32 so valid x in [1..cols]
+	
 	if not map or ty < 1 or ty > #map or tx < 1 or tx > #map[1] then
 		return nil
 	end
@@ -365,8 +365,8 @@ function dm_activateAbility(idx)
 		return
 	end
 
-	-- Abilities that need a tile click enter targeting mode instead of firing
-	local needsTile = { [1]=true }  -- Spawn needs a tile; add others here as they're built
+	
+	local needsTile = { [1]=true }  
 	if needsTile[idx] then
 		DM.targeting = true
 		dm_hud_log(ab.name .. " — click a floor tile to place  [ESC to cancel]")
@@ -393,7 +393,7 @@ function dm_mousepressed(mx, my, button)
 	local wy = (my - DM.offsetY) / DM.scale
 	local tx, ty = dm_screenToTile(mx, my)
 
-	-- Store debug info for on-screen display
+	
 	DM.debugClick = string.format(
 		"screen(%d,%d) world(%.0f,%.0f) tile(%s,%s) offset(%.0f,%.0f) scale(%.3f)",
 		mx, my, wx, wy,
@@ -414,7 +414,7 @@ end
 
 
 function dm_ability_spawn(dm, tx, ty)
-	-- tx/ty provided by mouse click via dm_mousepressed
+	
 	if not tx or not ty then
 		dm_hud_log("Spawn: no tile selected.")
 		return
@@ -433,7 +433,7 @@ function dm_ability_spawn(dm, tx, ty)
 end
 
 function dm_ability_mutate(dm)
-	-- WIP
+	
 	dm.essence = dm.essence - ABILITIES[2].cost
 	dm_hud_log("Mutate: ability WIP — no effect yet.")
 end

@@ -1,3 +1,6 @@
+local playerSprite
+local playerQuad
+
 function player_load()
 	player = {
 		grid_x = spawnX * 32,
@@ -13,6 +16,8 @@ function player_load()
 		movePoints = 0,      
 		shopVisited = false,
 		portalUsed = false,
+
+		
 	}
 
 	diceRoll = nil
@@ -20,6 +25,14 @@ function player_load()
 	entryTimer = 0
 
 	fog_reveal(spawnX, spawnY)
+
+	playerSprite = love.graphics.newImage("assets/tiles.png")
+
+	playerQuad = love.graphics.newQuad(
+    0, 32,
+	32, 32,
+	playerSprite:getDimensions()
+)
 end
 
 
@@ -78,7 +91,12 @@ function player_draw()
 	end
 
 	love.graphics.setColor(1, 1, 1)
-	love.graphics.rectangle("fill", player.act_x, player.act_y, 32, 32)
+	love.graphics.draw(
+	playerSprite,
+	playerQuad,
+	player.act_x,
+	player.act_y
+)
 	love.graphics.setColor(1, 1, 1)
 end
 
