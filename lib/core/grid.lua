@@ -1,5 +1,7 @@
-function grid_load()
+function grid_load(seed)
 	local mapModule = require("lib.states.map")
+	worldSeed = seed or os.time()
+	love.math.setRandomSeed(worldSeed)
 	map, spawnX, spawnY, carveLog = mapModule.generate(15, 15)
 
 	

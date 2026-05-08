@@ -291,9 +291,10 @@ function hud_keypressed(key)
 	end
 
 	if gameState == "win" and key == "return" then
-		gameState    = "menu"
+		gameState     = "menu"
 		selectedIndex = 1
-		grid_load()
+		worldSeed     = os.time()
+		grid_load(worldSeed)
 		fog_load()
 		player_load()
 		camera_load()
