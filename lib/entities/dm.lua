@@ -1,129 +1,65 @@
-
 local C = {
-	tiles = {
-		[0] = {0.18, 0.16, 0.22},   
-		[1] = {0.08, 0.07, 0.10},   
-		[2] = {0.25, 0.70, 0.45},   
-		[3] = {0.90, 0.20, 0.20},   
-		[4] = {0.30, 0.55, 1.00},   
-		[5] = {0.20, 0.35, 0.85},   
-		[6] = {1.00, 0.85, 0.20},   
-		[7] = {1.00, 0.75, 0.10},   
-	},
-	floor_grid  = {0.22, 0.20, 0.28, 0.6},
-	wall        = {0.08, 0.07, 0.10},
-	pawn_glow   = {1.00, 1.00, 1.00, 0.15},
-	selected_ab = {0.70, 0.35, 1.00},
+	tiles      = Config.colours.dmTiles,
+	floor_grid = {0.22, 0.20, 0.28, 0.6},
+	wall       = {0.08, 0.07, 0.10},
+	pawn_glow  = {1.00, 1.00, 1.00, 0.15},
 }
 
-
-local PAWN_COLOURS = {
-	{0.30, 0.80, 1.00},
-	{1.00, 0.70, 0.20},
-	{0.30, 1.00, 0.55},
-	{1.00, 0.35, 0.55},
+-- Ability action functions — kept here because they reference dm_* helpers.
+-- Order must match Config.dm.abilities.
+local ABILITY_ACTIONS = {
+	function(dm, tx, ty) dm_ability_spawn(dm, tx, ty) end,  -- 1 Spawn
+	function(dm)         dm_ability_mutate(dm)         end,  -- 2 Mutate
+	function(dm)         dm_ability_block(dm)          end,  -- 3 Block
+	function(dm)         dm_ability_swap(dm)           end,  -- 4 Swap
+	function(dm)         dm_ability_inflate(dm)        end,  -- 5 Inflate
+	function(dm)         dm_ability_shift(dm)          end,  -- 6 Shift
 }
 
-
-local ABILITIES = {
-	{
-		name        = "Spawn",
-		cost        = 12,
-		cooldownMax = 0,
-		cooldown    = 0,
-		desc        = "Place a new enemy adjacent to a pawn",
-		action      = function(dm, tx, ty) dm_ability_spawn(dm, tx, ty) end,
-	},
-	{
-		name        = "Mutate",
-		cost        = 8,
-		cooldownMax = 0,
-		cooldown    = 0,
-		desc        = "Modify a pawn's stats",
-		action      = function(dm) dm_ability_mutate(dm) end,
-	},
-	{
-		name        = "Block",
-		cost        = 6,
-		cooldownMax = 8,
-		cooldown    = 0,
-		desc        = "Seal a passage for 8 seconds",
-		action      = function(dm) dm_ability_block(dm) end,
-	},
-	{
-		name        = "Swap",
-		cost        = 20,
-		cooldownMax = 0,
-		cooldown    = 0,
-		desc        = "Teleport two pawns to each other",
-		action      = function(dm) dm_ability_swap(dm) end,
-	},
-	{
-		name        = "Inflate",
-		cost        = 6,
-		cooldownMax = 0,
-		cooldown    = 0,
-		desc        = "Raise damage or gold on next tile",
-		action      = function(dm) dm_ability_inflate(dm) end,
-	},
-	{
-		name        = "Shift",
-		cost        = 10,
-		cooldownMax = 12,
-		cooldown    = 0,
-		desc        = "Move a tile to a new position",
-		action      = function(dm) dm_ability_shift(dm) end,
-	},
-}
-
+-- Abilities that need a tile click before firing
+local NEEDS_TILE = { [1] = true }   -- Spawn
 
 
 function dm_load()
-	
+	local DC = Config.dm
+
 	local abs = {}
-	for i, a in ipairs(ABILITIES) do
+	for i, def in ipairs(DC.abilities) do
 		abs[i] = {
-			name        = a.name,
-			cost        = a.cost,
-			cooldownMax = a.cooldownMax,
-			cooldown    = a.cooldown,
-			desc        = a.desc,
-			action      = a.action,
+			name        = def.name,
+			cost        = def.cost,
+			cooldownMax = def.cooldownMax,
+			cooldown    = 0,
+			desc        = def.desc,
+			action      = ABILITY_ACTIONS[i],
 		}
 	end
 
 	DM = {
-		
-		essence         = 100,
-		essenceMax      = 100,
-		essenceDrain    = 1.5,   
+		essence         = DC.essence,
+		essenceMax      = DC.essenceMax,
+		essenceDrain    = DC.essenceDrain,
 
-		
 		abilities       = abs,
 		selectedAbility = nil,
-		targeting       = false,   
-		hoverTile       = nil,     
+		targeting       = false,
+		hoverTile       = nil,
 
-		
 		pawns           = {},
 
-		
 		totalDamageDealt = 0,
 		totalEssEarned   = 0,
 
-		
-		blocks          = {},   
+		blocks  = {},
 
-		
-		scale           = 1,
-		offsetX         = 0,
-		offsetY         = 0,
+		scale   = 1,
+		offsetX = 0,
+		offsetY = 0,
 	}
 
 	dm_hud_load()
 	dm_computeScale()
 end
-
 
 
 function dm_computeScale()
@@ -134,8 +70,6 @@ function dm_computeScale()
 
 	local cols  = #map[1]
 	local rows  = #map
-	
-	
 	local mapW  = (cols + 1) * 32
 	local mapH  = (rows + 1) * 32
 	local scaleX = mr.w / mapW
@@ -146,29 +80,24 @@ function dm_computeScale()
 end
 
 
-
 function dm_update(dt)
 	if not DM then return end
 
 	dm_hud_update(dt)
 
-	
 	for _, ab in ipairs(DM.abilities) do
 		if ab.cooldown > 0 then
 			ab.cooldown = math.max(0, ab.cooldown - dt)
 		end
 	end
 
-	
 	local stillActive = {}
 	for _, blk in ipairs(DM.blocks) do
 		blk.timer = blk.timer - dt
 		if blk.timer > 0 then
 			table.insert(stillActive, blk)
 		else
-			
-
-			if map and map[blk.y] and map[blk.y][blk.x] == 1 then
+			if map and map[blk.y] and map[blk.y][blk.x] == Config.map.tiles.wall then
 				map[blk.y][blk.x] = blk.origTile
 				dm_hud_log("Block expired at (" .. blk.x .. "," .. blk.y .. ")")
 			end
@@ -176,7 +105,6 @@ function dm_update(dt)
 	end
 	DM.blocks = stillActive
 
-	
 	if player then
 		DM.pawns = {{
 			name       = "Player",
@@ -186,18 +114,17 @@ function dm_update(dt)
 			movePoints = player.movePoints,
 			grid_x     = player.grid_x,
 			grid_y     = player.grid_y,
-			colour     = PAWN_COLOURS[1],
+			colour     = Config.dm.pawnColours[1],
 		}}
 	end
 
 	dm_computeScale()
-
 end
 
 
 function dm_onPawnDamage(amount)
 	if not DM then return end
-	local gain          = amount * 2
+	local gain          = amount * Config.dm.damageEssenceMultiplier
 	DM.essence          = math.min(DM.essenceMax, DM.essence + gain)
 	DM.totalDamageDealt = DM.totalDamageDealt + amount
 	DM.totalEssEarned   = DM.totalEssEarned   + gain
@@ -223,20 +150,17 @@ function dm_drawMap()
 		end
 	end
 
-	
 	local pulse = math.abs(math.sin(love.timer.getTime() * 3)) * 0.5 + 0.4
 	for _, blk in ipairs(DM.blocks) do
 		love.graphics.setColor(0.70, 0.35, 1.00, pulse)
 		love.graphics.rectangle("fill", blk.x * 32 + gap, blk.y * 32 + gap, 32 - gap, 32 - gap)
 	end
 
-	
 	if DM.targeting and DM.hoverTile then
-		local hx = DM.hoverTile.x
-		local hy = DM.hoverTile.y
+		local hx   = DM.hoverTile.x
+		local hy   = DM.hoverTile.y
 		local tile = map[hy] and map[hy][hx]
-		local validTarget = (tile == 0)  
-		if validTarget then
+		if tile == Config.map.tiles.floor then
 			love.graphics.setColor(0.90, 0.20, 0.20, 0.55)
 			love.graphics.rectangle("fill", hx * 32 + gap, hy * 32 + gap, 32 - gap, 32 - gap)
 			love.graphics.setColor(1.00, 0.40, 0.40, 0.9)
@@ -253,6 +177,7 @@ function dm_drawMap()
 	love.graphics.setColor(1, 1, 1)
 end
 
+
 function dm_drawPawns()
 	if not DM.pawns then return end
 
@@ -261,19 +186,18 @@ function dm_drawPawns()
 	love.graphics.scale(DM.scale, DM.scale)
 
 	local radius = math.max(3, 32 * 0.35)
+	local PAWN_COLOURS = Config.dm.pawnColours
 
 	for i, pawn in ipairs(DM.pawns) do
 		if pawn.grid_x and pawn.grid_y then
 			local px = pawn.grid_x + 16
 			local py = pawn.grid_y + 16
-			local pc = pawn.colour or PAWN_COLOURS[((i - 1) % 4) + 1]
+			local pc = pawn.colour or PAWN_COLOURS[((i - 1) % #PAWN_COLOURS) + 1]
 
 			love.graphics.setColor(pc[1], pc[2], pc[3], 0.18)
 			love.graphics.circle("fill", px, py, radius * 2.2)
-
 			love.graphics.setColor(pc[1], pc[2], pc[3], 1)
 			love.graphics.circle("fill", px, py, radius)
-
 			love.graphics.setColor(1, 1, 1, 0.6)
 			love.graphics.circle("line", px, py, radius)
 
@@ -298,14 +222,15 @@ function dm_keypressed(key)
 
 	dm_hud_keypressed(key)
 
-	local abKeys = {q=1, w=2, e=3, r=4, t=5, y=6}
+	local abKeys = {}
+	for i, k in ipairs(Config.keys.dmAbilities) do abKeys[k] = i end
+
 	if abKeys[key] then
 		local idx = abKeys[key]
 		local ab  = DM.abilities[idx]
 		if not ab then return end
 
 		if DM.targeting and DM.selectedAbility == idx then
-			
 			DM.selectedAbility = nil
 			DM.targeting = false
 			dm_hud_log("Ability cancelled.")
@@ -319,7 +244,7 @@ function dm_keypressed(key)
 		return
 	end
 
-	if key == "escape" then
+	if key == Config.keys.menu then
 		if DM.targeting or DM.selectedAbility then
 			DM.selectedAbility = nil
 			DM.targeting = false
@@ -332,14 +257,12 @@ function dm_keypressed(key)
 end
 
 
-
 function dm_screenToTile(mx, my)
 	if not DM or DM.scale == 0 then return nil end
 	local wx = (mx - DM.offsetX) / DM.scale
 	local wy = (my - DM.offsetY) / DM.scale
 	local tx = math.floor(wx / 32)
 	local ty = math.floor(wy / 32)
-	
 	if not map or ty < 1 or ty > #map or tx < 1 or tx > #map[1] then
 		return nil
 	end
@@ -365,9 +288,7 @@ function dm_activateAbility(idx)
 		return
 	end
 
-	
-	local needsTile = { [1]=true }  
-	if needsTile[idx] then
+	if NEEDS_TILE[idx] then
 		DM.targeting = true
 		dm_hud_log(ab.name .. " — click a floor tile to place  [ESC to cancel]")
 	else
@@ -389,18 +310,7 @@ function dm_mousepressed(mx, my, button)
 	if not DM or button ~= 1 then return end
 	if not DM.targeting or not DM.selectedAbility then return end
 
-	local wx = (mx - DM.offsetX) / DM.scale
-	local wy = (my - DM.offsetY) / DM.scale
 	local tx, ty = dm_screenToTile(mx, my)
-
-	
-	DM.debugClick = string.format(
-		"screen(%d,%d) world(%.0f,%.0f) tile(%s,%s) offset(%.0f,%.0f) scale(%.3f)",
-		mx, my, wx, wy,
-		tostring(tx), tostring(ty),
-		DM.offsetX, DM.offsetY, DM.scale
-	)
-
 	if not tx then
 		dm_hud_log("Click inside the map.")
 		return
@@ -413,8 +323,11 @@ function dm_mousepressed(mx, my, button)
 end
 
 
+-- ---------------------------------------------------------------------------
+--  Ability implementations
+-- ---------------------------------------------------------------------------
+
 function dm_ability_spawn(dm, tx, ty)
-	
 	if not tx or not ty then
 		dm_hud_log("Spawn: no tile selected.")
 		return
@@ -423,46 +336,43 @@ function dm_ability_spawn(dm, tx, ty)
 		dm_hud_log("Spawn: tile out of bounds.")
 		return
 	end
-	if map[ty][tx] ~= 0 then
+	if map[ty][tx] ~= Config.map.tiles.floor then
 		dm_hud_log("Spawn: must click an empty floor tile.")
 		return
 	end
-	map[ty][tx] = 3
-	dm.essence = dm.essence - ABILITIES[1].cost
+	map[ty][tx] = Config.map.tiles.enemy
+	dm.essence  = dm.essence - Config.dm.abilities[1].cost
 	dm_hud_log("Spawn: enemy placed at (" .. tx .. "," .. ty .. ")!")
 end
 
 function dm_ability_mutate(dm)
-	
-	dm.essence = dm.essence - ABILITIES[2].cost
+	dm.essence = dm.essence - Config.dm.abilities[2].cost
 	dm_hud_log("Mutate: ability WIP — no effect yet.")
 end
 
 function dm_ability_block(dm)
-	
 	local pawn = dm.pawns[1]
 	if not pawn then
 		dm_hud_log("Block: no pawns on map.")
 		return
 	end
 
-	local tx  = math.floor(pawn.grid_x / 32) + 1   
-	local ty  = math.floor(pawn.grid_y / 32)
-	if map[ty] and map[ty][tx] and map[ty][tx] == 0 then
+	local tx = math.floor(pawn.grid_x / 32) + 1
+	local ty = math.floor(pawn.grid_y / 32)
+	if map[ty] and map[ty][tx] and map[ty][tx] == Config.map.tiles.floor then
 		local orig       = map[ty][tx]
-		map[ty][tx]      = 1
+		map[ty][tx]      = Config.map.tiles.wall
 		local ab         = dm.abilities[3]
 		ab.cooldown      = ab.cooldownMax
-		dm.essence       = dm.essence - ABILITIES[3].cost
-		table.insert(dm.blocks, { x = tx, y = ty, timer = 8, origTile = orig })
-		dm_hud_log("Block placed at (" .. tx .. "," .. ty .. ") for 8s.")
+		dm.essence       = dm.essence - Config.dm.abilities[3].cost
+		table.insert(dm.blocks, { x = tx, y = ty, timer = Config.dm.blockDuration, origTile = orig })
+		dm_hud_log("Block placed at (" .. tx .. "," .. ty .. ") for " .. Config.dm.blockDuration .. "s.")
 	else
 		dm_hud_log("Block: target tile is not a floor tile.")
 	end
 end
 
 function dm_ability_swap(dm)
-	
 	if #dm.pawns < 2 then
 		dm_hud_log("Swap: need at least 2 pawns.")
 		return
@@ -470,20 +380,18 @@ function dm_ability_swap(dm)
 	local p1, p2 = dm.pawns[1], dm.pawns[2]
 	p1.grid_x, p2.grid_x = p2.grid_x, p1.grid_x
 	p1.grid_y, p2.grid_y = p2.grid_y, p1.grid_y
-	dm.essence = dm.essence - ABILITIES[4].cost
+	dm.essence = dm.essence - Config.dm.abilities[4].cost
 	dm_hud_log("Swap: pawns teleported to each other!")
 end
 
 function dm_ability_inflate(dm)
-	
-	dm.essence = dm.essence - ABILITIES[5].cost
+	dm.essence = dm.essence - Config.dm.abilities[5].cost
 	dm_hud_log("Inflate: ability WIP — no effect yet.")
 end
 
 function dm_ability_shift(dm)
-	
-	dm.essence = dm.essence - ABILITIES[6].cost
-	local ab   = dm.abilities[6]
+	dm.essence  = dm.essence - Config.dm.abilities[6].cost
+	local ab    = dm.abilities[6]
 	ab.cooldown = ab.cooldownMax
 	dm_hud_log("Shift: ability WIP — no effect yet.")
 end

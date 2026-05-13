@@ -1,47 +1,22 @@
-
 local DM_HUD = {}
 
-DM_HUD.TOP_BAR_H    = 40
-DM_HUD.BOT_BAR_H    = 72
-DM_HUD.RIGHT_COL_W  = 190
-DM_HUD.PAD          = 6
-DM_HUD.CORNER       = 8
+local L = Config.hud.dm
+local C = Config.colours.dmHud
+
+DM_HUD.TOP_BAR_H   = L.topBarH
+DM_HUD.BOT_BAR_H   = L.botBarH
+DM_HUD.RIGHT_COL_W = L.rightColW
+DM_HUD.PAD         = Config.hud.pad
+DM_HUD.CORNER      = Config.hud.corner
 
 DM_HUD.logMsg   = ""
 DM_HUD.logTimer = 0
-DM_HUD.LOG_DUR  = 4.0
-
-local C = {
-	bg          = {0.04, 0.04, 0.06},
-	panel       = {0.08, 0.07, 0.10},
-	border      = {0.22, 0.18, 0.28},
-	text        = {0.85, 0.85, 0.85},
-	label       = {0.45, 0.40, 0.55},
-	accent      = {0.70, 0.35, 1.00},  
-	danger      = {1.00, 0.25, 0.25},
-	warn        = {1.00, 0.80, 0.20},
-	ess_fill    = {0.60, 0.20, 1.00},
-	ess_low     = {1.00, 0.25, 0.25},
-	ess_bg      = {0.12, 0.08, 0.18},
-	ability_btn = {0.13, 0.10, 0.18},
-	ability_rdy = {0.22, 0.15, 0.32},
-	ability_cd  = {0.10, 0.08, 0.12},
-	pawn_label  = {0.55, 0.55, 0.65},
-	title       = {0.80, 0.55, 1.00},
-}
-
-local PAWN_COLOURS = {
-	{0.30, 0.80, 1.00},   
-	{1.00, 0.70, 0.20},   
-	{0.30, 1.00, 0.55},   
-	{1.00, 0.35, 0.55},   
-}
+DM_HUD.LOG_DUR  = Config.hud.logDuration
 
 
 local function setC(t, a)
 	love.graphics.setColor(t[1], t[2], t[3], a or 1)
 end
-
 
 local function panel(x, y, w, h, r, borderCol)
 	r = r or DM_HUD.CORNER
@@ -50,7 +25,6 @@ local function panel(x, y, w, h, r, borderCol)
 	setC(borderCol or C.border)
 	love.graphics.rectangle("line", x, y, w, h, r, r)
 end
-
 
 local function label(txt, x, y, col)
 	setC(col or C.label)
@@ -65,7 +39,6 @@ local function value(txt, x, y, col, size)
 end
 
 
-
 function dm_hud_load()
 	dm_hud_resize()
 end
@@ -75,7 +48,6 @@ function dm_hud_resize()
 	local sh = love.graphics.getHeight()
 	local p  = DM_HUD.PAD
 
-	
 	DM_HUD.mapRect = {
 		x = p,
 		y = DM_HUD.TOP_BAR_H + p,
@@ -100,7 +72,6 @@ function dm_hud_getMapRect()
 end
 
 
-
 function dm_hud_draw()
 	if not DM then return end
 
@@ -109,30 +80,20 @@ function dm_hud_draw()
 	local p  = DM_HUD.PAD
 	local mr = DM_HUD.mapRect
 
-	
 	setC(C.bg)
-	
 	love.graphics.rectangle("fill", 0, 0, sw, DM_HUD.TOP_BAR_H)
-	
 	love.graphics.rectangle("fill", sw - DM_HUD.RIGHT_COL_W - p, DM_HUD.TOP_BAR_H, DM_HUD.RIGHT_COL_W + p, sh - DM_HUD.TOP_BAR_H)
-	
 	local botH = DM_HUD.BOT_BAR_H + p * 2
 	love.graphics.rectangle("fill", 0, sh - botH, sw - DM_HUD.RIGHT_COL_W - p, botH)
-	
 	love.graphics.rectangle("fill", 0, DM_HUD.TOP_BAR_H, mr.x, sh - DM_HUD.TOP_BAR_H)
-	
+
 	setC({0.06, 0.05, 0.08})
 	love.graphics.rectangle("fill", mr.x, mr.y, mr.w, mr.h)
-
-
 	setC(C.border)
 	love.graphics.rectangle("line", mr.x, mr.y, mr.w, mr.h, 4, 4)
 
-	
 	dm_hud_drawTopBar(sw, sh, p)
-
 	dm_hud_drawRightCol(sw, sh, p)
-
 	dm_hud_drawAbilityBar(sw, sh, p)
 
 	if gameState == "dm_lose" then
@@ -145,10 +106,8 @@ end
 
 function dm_hud_drawTopBar(sw, sh, p)
 	local tbH = DM_HUD.TOP_BAR_H
-
 	panel(p, 2, sw - p * 2, tbH - 2, 6)
 
-	
 	local badgeW = 90
 	local badgeX = p + 6
 	local badgeY = 8
@@ -160,35 +119,28 @@ function dm_hud_drawTopBar(sw, sh, p)
 	setC(C.title)
 	love.graphics.printf("DUNGEON MASTER", badgeX, badgeY + 5, badgeW, "center")
 
-	
 	local essX    = badgeX + badgeW + 14
-	local essBarW = 200
-	local essBarH = 13
+	local essBarW = L.essBarW
+	local essBarH = L.essBarH
 	local essBarY = (tbH - essBarH) / 2
 
 	label("ESSENCE", essX, 4)
-
-	setC(C.ess_bg)
+	setC(C.essBg)
 	love.graphics.rectangle("fill", essX, essBarY, essBarW, essBarH, 3, 3)
 
 	local essPct = math.max(0, DM.essence / DM.essenceMax)
-	local fillC  = essPct < 0.25 and C.ess_low or C.ess_fill
+	local fillC  = essPct < L.lowEssPct and C.essLow or C.essFill
 	if essPct > 0 then
 		setC(fillC)
 		love.graphics.rectangle("fill", essX, essBarY, essBarW * essPct, essBarH, 3, 3)
 	end
 	setC(C.border)
 	love.graphics.rectangle("line", essX, essBarY, essBarW, essBarH, 3, 3)
-
 	love.graphics.setFont(love.graphics.newFont(10))
 	setC(C.text)
-	love.graphics.printf(
-		math.floor(DM.essence) .. " / " .. DM.essenceMax,
-		essX, essBarY + 1, essBarW, "center"
-	)
+	love.graphics.printf(math.floor(DM.essence) .. " / " .. DM.essenceMax, essX, essBarY + 1, essBarW, "center")
 
-	
-	if essPct < 0.25 then
+	if essPct < L.lowEssPct then
 		local pulse = math.abs(math.sin(love.timer.getTime() * 4))
 		setC(C.danger, pulse * 0.6)
 		love.graphics.rectangle("fill", essX, essBarY, essBarW, essBarH, 3, 3)
@@ -197,7 +149,6 @@ function dm_hud_drawTopBar(sw, sh, p)
 		love.graphics.printf("LOW", essX, essBarY + 1, essBarW, "center")
 	end
 
-	
 	if DM_HUD.logTimer > 0 then
 		local a = math.min(DM_HUD.logTimer, 1)
 		setC(C.accent, a)
@@ -205,7 +156,6 @@ function dm_hud_drawTopBar(sw, sh, p)
 		love.graphics.printf(DM_HUD.logMsg, 0, 11, sw, "center")
 	end
 
-	
 	local btnW, btnH = 80, 22
 	local btnX = sw - p - btnW
 	local btnY = (tbH - btnH) / 2
@@ -219,7 +169,6 @@ function dm_hud_drawTopBar(sw, sh, p)
 end
 
 
-
 function dm_hud_drawRightCol(sw, sh, p)
 	local rcX = sw - DM_HUD.RIGHT_COL_W - p
 	local rcY = DM_HUD.TOP_BAR_H + p
@@ -229,11 +178,11 @@ function dm_hud_drawRightCol(sw, sh, p)
 	panel(rcX, rcY, rcW, rcH)
 	label("PAWNS", rcX + 8, rcY + 6, C.accent)
 
-	local py   = rcY + 24
-	local px   = rcX + 8
-	local pw   = rcW - 16
+	local py  = rcY + 24
+	local px  = rcX + 8
+	local pw  = rcW - 16
 
-	
+	local PAWN_COLOURS = Config.dm.pawnColours
 	local pawns = DM.pawns or {}
 	if #pawns == 0 and player then
 		pawns = {{
@@ -248,28 +197,24 @@ function dm_hud_drawRightCol(sw, sh, p)
 	end
 
 	for i, pawn in ipairs(pawns) do
-		local pc = pawn.colour or PAWN_COLOURS[((i - 1) % 4) + 1]
+		local pc    = pawn.colour or PAWN_COLOURS[((i - 1) % #PAWN_COLOURS) + 1]
 		local cardH = 66
-		local cy = py
+		local cy    = py
 
-	
 		setC({pc[1] * 0.15, pc[2] * 0.15, pc[3] * 0.15, 1})
 		love.graphics.rectangle("fill", px - 2, cy, pw + 4, cardH, 4, 4)
 		setC(pc, 0.6)
 		love.graphics.rectangle("line", px - 2, cy, pw + 4, cardH, 4, 4)
-
 		setC(pc)
 		love.graphics.circle("fill", px + 8, cy + 12, 5)
-
 		setC(C.text)
 		love.graphics.setFont(love.graphics.newFont(12))
 		love.graphics.print(pawn.name or ("Pawn " .. i), px + 18, cy + 6)
 
-		
 		local hpBarW  = pw - 4
 		local hpBarH  = 9
 		local hpBarY  = cy + 23
-		local maxHp   = 10
+		local maxHp   = Config.player.maxHp
 		local hpPct   = math.max(0, (pawn.hp or 0) / maxHp)
 		local hpFillC = hpPct > 0.35 and {0.20, 0.75, 0.35} or C.danger
 
@@ -285,7 +230,6 @@ function dm_hud_drawRightCol(sw, sh, p)
 		setC(C.text)
 		love.graphics.printf((pawn.hp or 0) .. " HP", px, hpBarY, hpBarW, "center")
 
-		
 		love.graphics.setFont(love.graphics.newFont(10))
 		setC({1.00, 0.85, 0.25})
 		love.graphics.print("G " .. (pawn.gold or 0), px, cy + 37)
@@ -300,7 +244,6 @@ function dm_hud_drawRightCol(sw, sh, p)
 			love.graphics.print("(" .. tx .. "," .. ty .. ")", px, cy + 50)
 		end
 
-		
 		if (pawn.hp or 1) <= 0 then
 			setC({0, 0, 0}, 0.65)
 			love.graphics.rectangle("fill", px - 2, cy, pw + 4, cardH, 4, 4)
@@ -317,20 +260,17 @@ function dm_hud_drawRightCol(sw, sh, p)
 	setC(C.border)
 	love.graphics.line(rcX + 6, botY, rcX + rcW - 6, botY)
 	label("Pawn events", rcX + 8, botY + 4, C.label)
-
 	setC(C.text)
 	love.graphics.setFont(love.graphics.newFont(11))
-	love.graphics.print("Dmg dealt : " .. (DM.totalDamageDealt or 0), rcX + 8, botY + 16)
+	love.graphics.print("Dmg dealt : "  .. (DM.totalDamageDealt or 0),             rcX + 8, botY + 16)
 	love.graphics.print("Ess. earned: " .. math.floor(DM.totalEssEarned or 0), rcX + 8, botY + 30)
 end
 
 
-
-local ABILITY_KEYS = {"q", "w", "e", "r", "t", "y"}
-
 function dm_hud_drawAbilityBar(sw, sh, p)
 	if not DM or not DM.abilities then return end
 
+	local K     = Config.keys.dmAbilities
 	local barH  = DM_HUD.BOT_BAR_H
 	local barY  = sh - barH - p
 	local barW  = sw - DM_HUD.RIGHT_COL_W - p * 4
@@ -339,42 +279,36 @@ function dm_hud_drawAbilityBar(sw, sh, p)
 	panel(barX, barY, barW, barH, 6)
 	label("ABILITIES", barX + 8, barY + 4, C.accent)
 
-	local n       = #DM.abilities
-	local btnW    = math.floor((barW - 16 - (n - 1) * 6) / n)
-	local btnH    = barH - 22
+	local n        = #DM.abilities
+	local btnW     = math.floor((barW - 16 - (n - 1) * 6) / n)
+	local btnH     = barH - 22
 	local btnBaseX = barX + 8
-	local btnY    = barY + 18
+	local btnY     = barY + 18
 
 	for i, ab in ipairs(DM.abilities) do
-		local bx      = btnBaseX + (i - 1) * (btnW + 6)
-		local onCd    = (ab.cooldown or 0) > 0
+		local bx       = btnBaseX + (i - 1) * (btnW + 6)
+		local onCd     = (ab.cooldown or 0) > 0
 		local canAfford = DM.essence >= ab.cost
-		local ready   = not onCd and canAfford
-		local bgC     = ready and C.ability_rdy or (onCd and C.ability_cd or C.ability_btn)
+		local ready    = not onCd and canAfford
+		local bgC      = ready and C.abilityRdy or (onCd and C.abilityCd or C.abilityBtn)
 
 		setC(bgC)
 		love.graphics.rectangle("fill", bx, btnY, btnW, btnH, 4, 4)
-
-		local borderC = ready and C.accent or C.border
-		setC(borderC, ready and 0.7 or 0.4)
+		setC(ready and C.accent or C.border, ready and 0.7 or 0.4)
 		love.graphics.rectangle("line", bx, btnY, btnW, btnH, 4, 4)
 
-		
 		setC(ready and C.accent or C.label)
 		love.graphics.setFont(love.graphics.newFont(9))
-		love.graphics.printf("[" .. ABILITY_KEYS[i]:upper() .. "]", bx, btnY + 2, btnW, "center")
+		love.graphics.printf("[" .. (K[i] or "?"):upper() .. "]", bx, btnY + 2, btnW, "center")
 
-		
 		setC(ready and C.text or C.label)
 		love.graphics.setFont(love.graphics.newFont(11))
 		love.graphics.printf(ab.name, bx, btnY + 13, btnW, "center")
 
-		
-		setC(canAfford and C.ess_fill or C.danger)
+		setC(canAfford and C.essFill or C.danger)
 		love.graphics.setFont(love.graphics.newFont(9))
 		love.graphics.printf(ab.cost .. " ess", bx, btnY + 27, btnW, "center")
 
-		
 		if onCd then
 			local cdPct = ab.cooldown / ab.cooldownMax
 			setC({0, 0, 0}, 0.55 * cdPct)
@@ -384,7 +318,6 @@ function dm_hud_drawAbilityBar(sw, sh, p)
 			love.graphics.printf(string.format("%.1fs", ab.cooldown), bx, btnY + btnH / 2 - 6, btnW, "center")
 		end
 
-		
 		if DM.selectedAbility == i then
 			setC(C.accent, 0.35)
 			love.graphics.rectangle("fill", bx, btnY, btnW, btnH, 4, 4)
@@ -395,15 +328,12 @@ function dm_hud_drawAbilityBar(sw, sh, p)
 end
 
 
-
 function dm_hud_drawLoseScreen(sw, sh)
 	setC({0, 0, 0}, 0.86)
 	love.graphics.rectangle("fill", 0, 0, sw, sh)
-
 	love.graphics.setFont(love.graphics.newFont(30))
 	setC(C.danger)
 	love.graphics.printf("Your Essence fades...", 0, sh / 2 - 80, sw, "center")
-
 	love.graphics.setFont(love.graphics.newFont(15))
 	setC(C.text)
 	love.graphics.printf(
@@ -412,12 +342,10 @@ function dm_hud_drawLoseScreen(sw, sh)
 		"Essence earned        : " .. math.floor(DM.totalEssEarned or 0),
 		0, sh / 2 - 10, sw, "center"
 	)
-
 	setC(C.label)
 	love.graphics.setFont(love.graphics.newFont(13))
 	love.graphics.printf("Press ENTER to return to menu", 0, sh / 2 + 100, sw, "center")
 end
-
 
 
 function dm_hud_keypressed(key)

@@ -1,3 +1,4 @@
+Config = require("configs.config")
 require("lib.states.menu")
 require("lib.entities.player")
 require("lib.core.grid")

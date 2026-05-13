@@ -1,6 +1,6 @@
 fog = {
-	enabled = true,
-	visited = {}, 
+	enabled = Config.fog.enabled,
+	visited = {},
 }
 
 function fog_load()
@@ -8,23 +8,19 @@ function fog_load()
 	for y = 1, #map do
 		fog.visited[y] = {}
 		for x = 1, #map[y] do
-			fog.visited[y][x] = false 
+			fog.visited[y][x] = false
 		end
 	end
 end
 
-
-function fog_reveal(tileX, tileY) 
+function fog_reveal(tileX, tileY)
 	if fog.visited[tileY] and fog.visited[tileY][tileX] ~= nil then
 		fog.visited[tileY][tileX] = true
 	end
 end
 
-
 function fog_draw()
 	if not fog.enabled then return end
-
-	
 	love.graphics.setColor(0, 0, 0, 1)
 	for y = 1, #map do
 		for x = 1, #map[y] do
@@ -33,14 +29,11 @@ function fog_draw()
 			end
 		end
 	end
-
 	love.graphics.setColor(1, 1, 1)
 end
 
-
 function fog_keypressed(key)
-	if key == "f2" then
+	if key == Config.keys.fogToggle then
 		fog.enabled = not fog.enabled
 	end
 end
-

@@ -1,48 +1,32 @@
 local HUD = {}
 
+local L = Config.hud.player
+local C = Config.colours.playerHud
 
-HUD.TOP_BAR_H   = 36
-HUD.RIGHT_COL_W = 180
-HUD.PAD         = 6
-HUD.CORNER      = 8
+HUD.TOP_BAR_H   = L.topBarH
+HUD.RIGHT_COL_W = L.rightColW
+HUD.PAD         = Config.hud.pad
+HUD.CORNER      = Config.hud.corner
 
 HUD.mapRect = { x = 0, y = 0, w = 0, h = 0 }
-
 
 HUD.debugVisible = true
 
 HUD.logMsg   = ""
 HUD.logTimer = 0
-HUD.LOG_DUR  = 4.0
+HUD.LOG_DUR  = Config.hud.logDuration
 
-
-local C = {
-	bg        = {0.05, 0.05, 0.06},
-	panel     = {0.08, 0.08, 0.10},
-	border    = {0.25, 0.25, 0.30},
-	text      = {0.85, 0.85, 0.85},
-	label     = {0.45, 0.45, 0.55},
-	accent    = {0.35, 0.85, 0.75},   
-	gold      = {1.00, 0.85, 0.25},
-	danger    = {1.00, 0.30, 0.30},
-	hp_fill   = {0.20, 0.75, 0.35},
-	hp_bg     = {0.15, 0.15, 0.18},
-	debug_hdr = {0.40, 1.00, 0.85},
-	debug_warn= {1.00, 0.85, 0.30},
-}
 
 local function setC(t, a)
 	love.graphics.setColor(t[1], t[2], t[3], a or 1)
 end
 
-
-
 local function panel(x, y, w, h, r)
 	r = r or HUD.CORNER
 	setC(C.panel)
-	love.graphics.rectangle("fill",  x, y, w, h, r, r)
+	love.graphics.rectangle("fill", x, y, w, h, r, r)
 	setC(C.border)
-	love.graphics.rectangle("line",  x, y, w, h, r, r)
+	love.graphics.rectangle("line", x, y, w, h, r, r)
 end
 
 local function label(txt, x, y, col)
@@ -56,7 +40,6 @@ local function value(txt, x, y, col)
 	love.graphics.setFont(love.graphics.newFont(13))
 	love.graphics.print(txt, x, y)
 end
-
 
 
 function hud_load()
@@ -88,68 +71,59 @@ function hud_update(dt)
 end
 
 
-
 function hud_draw()
 	local sw = love.graphics.getWidth()
 	local sh = love.graphics.getHeight()
 	local p  = HUD.PAD
 	local mr = HUD.mapRect
 
-
 	setC(C.bg)
 	love.graphics.rectangle("fill", 0, 0, sw, sh)
-
 	setC(C.border)
 	love.graphics.rectangle("line", mr.x, mr.y, mr.w, mr.h, 4, 4)
 
-	
-	local tbY = 0
 	local tbH = HUD.TOP_BAR_H
+	panel(p, 2, sw - p * 2, tbH - 2, 6)
 
-	panel(p, tbY + 2, sw - p * 2, tbH - 2, 6)
-
-
+	-- HP bar
 	local hpX    = p + 8
-	local hpBarW = 160
-	local hpBarH = 12
-	local hpBarY = tbY + (tbH - hpBarH) / 2
+	local hpBarW = L.hpBarW
+	local hpBarH = L.hpBarH
+	local hpBarY = (tbH - hpBarH) / 2
 
-	label("HP", hpX, tbY + 4)
-
-	setC(C.hp_bg)
+	label("HP", hpX, 4)
+	setC(C.hpBg)
 	love.graphics.rectangle("fill", hpX, hpBarY, hpBarW, hpBarH, 3, 3)
 
-	local hpPct = math.max(0, player.hp / 10)
-	local fillC = hpPct > 0.4 and C.hp_fill or C.danger
+	local hpPct = math.max(0, player.hp / L.maxHp)
+	local fillC = hpPct > L.lowHpPct and C.hpFill or C.danger
 	setC(fillC)
 	love.graphics.rectangle("fill", hpX, hpBarY, hpBarW * hpPct, hpBarH, 3, 3)
-	
 	setC(C.border)
 	love.graphics.rectangle("line", hpX, hpBarY, hpBarW, hpBarH, 3, 3)
-	
 	setC(C.text)
 	love.graphics.setFont(love.graphics.newFont(10))
-	love.graphics.printf(player.hp .. " / 10", hpX, hpBarY + 1, hpBarW, "center")
+	love.graphics.printf(player.hp .. " / " .. L.maxHp, hpX, hpBarY + 1, hpBarW, "center")
 
-	
+	-- Gold
 	local goldX = hpX + hpBarW + 16
-	label("GOLD", goldX, tbY + 4)
+	label("GOLD", goldX, 4)
 	setC(C.gold)
 	love.graphics.setFont(love.graphics.newFont(14))
-	love.graphics.print(player.gold, goldX, tbY + 14)
+	love.graphics.print(player.gold, goldX, 14)
 
-	
+	-- Log message
 	if HUD.logTimer > 0 then
 		local a = math.min(HUD.logTimer, 1)
 		setC(C.accent, a)
 		love.graphics.setFont(love.graphics.newFont(13))
-		love.graphics.printf(HUD.logMsg, 0, tbY + 10, sw, "center")
+		love.graphics.printf(HUD.logMsg, 0, 10, sw, "center")
 	end
 
-	
+	-- Menu button
 	local btnW, btnH = 70, 22
 	local btnX = sw - p - btnW - HUD.RIGHT_COL_W - p
-	local btnY = tbY + (tbH - btnH) / 2
+	local btnY = (tbH - btnH) / 2
 	setC(C.panel)
 	love.graphics.rectangle("fill", btnX, btnY, btnW, btnH, 4, 4)
 	setC(C.border)
@@ -158,32 +132,29 @@ function hud_draw()
 	love.graphics.setFont(love.graphics.newFont(11))
 	love.graphics.printf("MENU  [ESC]", btnX, btnY + 5, btnW, "center")
 
-	
-	local rcX = sw - HUD.RIGHT_COL_W - p
-	local rcY = HUD.TOP_BAR_H + p
-	local rcW = HUD.RIGHT_COL_W
-	local rcH = sh - HUD.TOP_BAR_H - p * 2
-
+	-- Right column
+	local rcX    = sw - HUD.RIGHT_COL_W - p
+	local rcY    = HUD.TOP_BAR_H + p
+	local rcW    = HUD.RIGHT_COL_W
+	local rcH    = sh - HUD.TOP_BAR_H - p * 2
 	local statsH = math.floor(rcH * 0.48)
 	local invH   = rcH - statsH - p
 
-	
 	panel(rcX, rcY, rcW, statsH)
 	label("STATS", rcX + 8, rcY + 6, C.accent)
 
-	local sy = rcY + 22
-	local sx = rcX + 8
+	local sy  = rcY + 22
+	local sx  = rcX + 8
 	local sw2 = rcW - 16
 
 	local statLines = {
-		{ lbl = "HP",       val = player.hp,                      col = player.hp <= 3 and C.danger or C.text },
-		{ lbl = "Gold",     val = player.gold,                    col = C.gold },
-		{ lbl = "Dmg taken",val = player.damageTaken,             col = C.text },
-		{ lbl = "Moves",    val = player.movePoints,              col = C.accent },
-		{ lbl = "Shop",     val = player.shopVisited and "Yes" or "No", col = C.text },
-		{ lbl = "Portal",   val = player.portalUsed  and "Yes" or "No", col = C.text },
+		{ lbl = "HP",        val = player.hp,                           col = player.hp <= 3 and C.danger or C.text },
+		{ lbl = "Gold",      val = player.gold,                         col = C.gold },
+		{ lbl = "Dmg taken", val = player.damageTaken,                  col = C.text },
+		{ lbl = "Moves",     val = player.movePoints,                   col = C.accent },
+		{ lbl = "Shop",      val = player.shopVisited and "Yes" or "No", col = C.text },
+		{ lbl = "Portal",    val = player.portalUsed  and "Yes" or "No", col = C.text },
 	}
-
 	for _, s in ipairs(statLines) do
 		label(s.lbl, sx, sy)
 		setC(s.col or C.text)
@@ -192,74 +163,68 @@ function hud_draw()
 		sy = sy + 20
 	end
 
-	
+	-- Toggle hints
 	sy = sy + 4
 	setC(C.label)
 	love.graphics.setFont(love.graphics.newFont(10))
-	love.graphics.print("Cam [F1] " .. (camera.enabled and "ON" or "OFF"), sx, sy)
-	sy = sy + 14
-	love.graphics.print("Fog [F2] " .. (fog.enabled and "ON" or "OFF"), sx, sy)
-	sy = sy + 14
-	love.graphics.print("Dbg [F3] " .. (HUD.debugVisible and "ON" or "OFF"), sx, sy)
+	love.graphics.print("Cam [" .. Config.keys.camToggle:upper() .. "] " .. (camera.enabled and "ON" or "OFF"), sx, sy) sy = sy + 14
+	love.graphics.print("Fog [" .. Config.keys.fogToggle:upper() .. "] " .. (fog.enabled    and "ON" or "OFF"), sx, sy) sy = sy + 14
+	love.graphics.print("Dbg [" .. Config.keys.dbgToggle:upper() .. "] " .. (HUD.debugVisible and "ON" or "OFF"), sx, sy)
 
-	local invY = rcY + statsH + p
+	-- Inventory panel
+	local invY    = rcY + statsH + p
 	panel(rcX, invY, rcW, invH)
 	label("INVENTORY", rcX + 8, invY + 6, C.accent)
-
 
 	local slotSize = 32
 	local cols     = 4
 	local slotPad  = 6
 	local startX   = rcX + math.floor((rcW - (slotSize * cols + slotPad * (cols - 1))) / 2)
 	local startY   = invY + 24
-
 	for row = 0, 2 do
 		for col = 0, cols - 1 do
 			local sx2 = startX + col * (slotSize + slotPad)
 			local sy2 = startY + row * (slotSize + slotPad)
-			setC(C.hp_bg)
+			setC(C.hpBg)
 			love.graphics.rectangle("fill", sx2, sy2, slotSize, slotSize, 4, 4)
 			setC(C.border)
 			love.graphics.rectangle("line", sx2, sy2, slotSize, slotSize, 4, 4)
 		end
 	end
 
-	
+	-- Win overlay
 	if gameState == "win" then
+		local gw = love.graphics.getWidth()
 		setC({0, 0, 0}, 0.82)
-		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), sh)
-
+		love.graphics.rectangle("fill", 0, 0, gw, sh)
 		love.graphics.setFont(love.graphics.newFont(28))
 		setC(C.accent)
-		love.graphics.printf("The Dungeon crumbles behind you...", 0, sh / 2 - 90, love.graphics.getWidth(), "center")
-
+		love.graphics.printf("The Dungeon crumbles behind you...", 0, sh / 2 - 90, gw, "center")
 		love.graphics.setFont(love.graphics.newFont(15))
 		setC(C.text)
 		love.graphics.printf(
-			"Gold : " .. player.gold .. "\n" ..
-			"Damage taken : " .. player.damageTaken .. "\n" ..
-			"Moves made : " .. player.movePoints .. "\n" ..
+			"Gold : "         .. player.gold        .. "\n" ..
+			"Damage taken : " .. player.damageTaken  .. "\n" ..
+			"Moves made : "   .. player.movePoints   .. "\n" ..
 			"Shop visited : " .. (player.shopVisited and "Yes" or "No") .. "\n" ..
-			"Portal used : " .. (player.portalUsed and "Yes" or "No"),
-			0, sh / 2 - 20, love.graphics.getWidth(), "center"
+			"Portal used : "  .. (player.portalUsed  and "Yes" or "No"),
+			0, sh / 2 - 20, gw, "center"
 		)
-
 		setC(C.label)
-		love.graphics.printf("Press ENTER to return to menu", 0, sh / 2 + 100, love.graphics.getWidth(), "center")
+		love.graphics.printf("Press ENTER to return to menu", 0, sh / 2 + 100, gw, "center")
 	end
 
-
+	-- Debug overlay
 	if HUD.debugVisible and gridReady() then
 		local dbLines = {
-			{ txt = "[ DEBUG ]",                           col = C.debug_hdr },
+			{ txt = "[ DEBUG ]",                                     col = C.debugHdr },
 			{ txt = "Pos   : " .. (player.grid_x/32) .. ", " .. (player.grid_y/32) },
-			{ txt = "HP    : " .. player.hp,              col = player.hp <= 3 and C.danger or nil },
-			{ txt = "Moves : " .. player.movePoints,      col = C.accent },
-			{ txt = "Gold  : " .. player.gold,            col = C.gold },
-			{ txt = "Cam   : " .. (camera.enabled and "ON" or "OFF"), col = C.debug_warn },
-			{ txt = "Fog   : " .. (fog.enabled and "ON" or "OFF"),    col = C.debug_warn },
+			{ txt = "HP    : " .. player.hp,                         col = player.hp <= 3 and C.danger or nil },
+			{ txt = "Moves : " .. player.movePoints,                 col = C.accent },
+			{ txt = "Gold  : " .. player.gold,                       col = C.gold },
+			{ txt = "Cam   : " .. (camera.enabled and "ON" or "OFF"), col = C.debugWarn },
+			{ txt = "Fog   : " .. (fog.enabled    and "ON" or "OFF"), col = C.debugWarn },
 		}
-
 		local lineH  = 15
 		local dbPadX = 6
 		local dbPadY = 4
@@ -272,7 +237,6 @@ function hud_draw()
 		love.graphics.rectangle("fill", dbX, dbY, dbW, dbH, 4, 4)
 		setC(C.border)
 		love.graphics.rectangle("line", dbX, dbY, dbW, dbH, 4, 4)
-
 		for i, d in ipairs(dbLines) do
 			setC(d.col or C.text)
 			love.graphics.setFont(love.graphics.newFont(11))
@@ -284,23 +248,21 @@ function hud_draw()
 end
 
 
-
 function hud_keypressed(key)
-	if key == "f3" then
+	if key == Config.keys.dbgToggle then
 		HUD.debugVisible = not HUD.debugVisible
 	end
 
 	if gameState == "win" and key == "return" then
-		gameState     = "menu"
+		gameState = "menu"
 		selectedIndex = 1
-		worldSeed     = os.time()
+		worldSeed = os.time()
 		grid_load(worldSeed)
 		fog_load()
 		player_load()
 		camera_load()
 	end
 end
-
 
 function hud_getMapRect()
 	return HUD.mapRect

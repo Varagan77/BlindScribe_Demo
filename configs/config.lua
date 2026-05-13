@@ -1,6 +1,6 @@
 -- =============================================================================
---  config.lua  —  Central configuration
---  DO NOT HARDCODE.
+--  config.lua  —  Central configuration for BlindScribe
+--  DO NOT HARDCODE PLEASE I BEG YAH.
 -- =============================================================================
 
 Config = {}
@@ -11,46 +11,56 @@ Config = {}
 -- ---------------------------------------------------------------------------
 Config.map = {
     tileSize   = 32,        -- pixel size of one tile
-    cols       = 15,        -- map width  in tiles
-    rows       = 15,        -- map height in tiles
-    seed       = nil,       -- nil  → os.time() at startup
+    cols       = 15,        -- map width  in tiles (must be odd; forced odd in map.lua)
+    rows       = 15,        -- map height in tiles (must be odd; forced odd in map.lua)
+    seed       = nil,       -- nil → os.time() at startup
 
-    -- Tile IDs  (match quads in grid.lua)
+    -- Debug / generation animation
+    debugSpeed = 0.04,      -- seconds per carve-step reveal
+
+    -- Procedural generation ranges
+    roomCountMin  = 3,      -- min extra carved rooms
+    roomCountMax  = 6,      -- max extra carved rooms
+    roomSizeMin   = 2,      -- min half-size of a carved room
+    roomSizeMax   = 3,      -- max half-size of a carved room
+    enemyCountMin = 3,      -- min enemies placed
+    enemyCountMax = 8,      -- max enemies placed
+    goldCountMin  = 3,      -- min gold tiles placed
+    goldCountMax  = 8,      -- max gold tiles placed
+    shopCount     = 2,      -- exact number of shops placed
+
+    -- Tile IDs  (match quads[i] in grid.lua — index 0-based)
     tiles = {
-        floor   = 0,
-        wall    = 1,
-        shop    = 2,
-        enemy   = 3,
+        floor     = 0,
+        wall      = 1,
+        shop      = 2,
+        enemy     = 3,
         portalIn  = 4,
         portalOut = 5,
-        exit    = 6,
-        gold    = 7,
+        exit      = 6,
+        gold      = 7,
     },
 }
-
--- Debug / generation animation
-Config.map.debugSpeed = 0.04    -- seconds per carve-step reveal
 
 
 -- ---------------------------------------------------------------------------
 --  PLAYER
 -- ---------------------------------------------------------------------------
 Config.player = {
-    hp        = 10,
-    maxHp     = 10,
-    gold      = 0,
-    speed     = 10,     -- lerp speed (higher = snappier movement)
+    hp    = 10,
+    maxHp = 10,
+    gold  = 0,
+    speed = 10,     -- lerp speed (higher = snappier movement)
 
     -- Dice roll cutscene timing (seconds)
     dice = {
         spinStart   = 0.8,   -- when the die starts spinning
         spinEnd     = 3.0,   -- when it locks on the result
-        totalTime   = 4.0,   -- when diceRoll is cleared
+        totalTime   = 4.0,   -- when diceRoll table is cleared
         minInterval = 0.06,  -- fastest face-change interval
-        maxInterval = 0.31,  -- slowest face-change interval
+        maxInterval = 0.31,  -- slowest  face-change interval  (0.06 + 0.25)
     },
 
-    -- Entry popup
     entryPopupDuration = 3.5,   -- seconds the "You entered…" message stays
 }
 
@@ -59,8 +69,10 @@ Config.player = {
 --  CAMERA
 -- ---------------------------------------------------------------------------
 Config.camera = {
-    enabled  = true,
-    lerp     = 0.12,    -- camera follow speed (0 = instant, 1 = no follow)
+    enabled = true,
+    speed   = 6,    -- lerp multiplier used in camera_update  (camera.speed in camera.lua)
+                    -- NOTE: camera.lua currently uses camera.speed, not camera.lerp.
+                    --       Rename the field in camera.lua if you want "lerp" semantics (0-1).
 }
 
 
@@ -78,10 +90,16 @@ Config.fog = {
 Config.dm = {
     essence      = 100,
     essenceMax   = 100,
-    essenceDrain = 1.5,     -- essence lost per second passively
+    essenceDrain = 1.5,     -- essence lost per second (passive drain)
     lowEssPct    = 0.25,    -- fraction at which "LOW" warning appears
 
-    -- Pawn colours (up to 4; cycled with modulo for more pawns)
+    -- Essence reward when a pawn takes damage
+    damageEssenceMultiplier = 2,    -- gain = damage * this
+
+    -- Block ability
+    blockDuration = 8,      -- seconds a blocked tile stays sealed
+
+    -- Pawn colours (up to 4; cycled with modulo for >4 pawns)
     pawnColours = {
         {0.30, 0.80, 1.00},   -- blue
         {1.00, 0.70, 0.20},   -- orange
@@ -89,8 +107,8 @@ Config.dm = {
         {1.00, 0.35, 0.55},   -- pink
     },
 
-    -- Ability definitions
-    -- Fields: name, cost, cooldownMax (0 = no cooldown), desc
+    -- Ability definitions  (numeric params only — action functions live in dm.lua)
+    -- Order must match ABILITY_ACTIONS table in dm.lua.
     abilities = {
         {
             name        = "Spawn",
@@ -108,7 +126,7 @@ Config.dm = {
             name        = "Block",
             cost        = 6,
             cooldownMax = 8,
-            desc        = "Seal a passage for a turn [WIP]",
+            desc        = "Seal a passage temporarily [WIP]",
         },
         {
             name        = "Swap",
@@ -129,51 +147,45 @@ Config.dm = {
             desc        = "Move a tile to a new position [WIP]",
         },
     },
-
-    -- Essence reward when a pawn takes damage
-    damageEssenceMultiplier = 2,   -- gain = damage * this
-
-    -- Block ability
-    blockDuration = 8,   -- seconds a Block tile stays sealed
 }
 
 
 -- ---------------------------------------------------------------------------
---  HUD — shared layout
+--  HUD — shared layout constants
 -- ---------------------------------------------------------------------------
 Config.hud = {
-    pad    = 6,
-    corner = 8,
+    pad         = 6,
+    corner      = 8,
     logDuration = 4.0,   -- seconds a log message stays visible
-}
 
--- Player HUD
-Config.hud.player = {
-    topBarH   = 36,
-    rightColW = 180,
-    hpBarW    = 160,
-    hpBarH    = 12,
-    maxHp     = 10,          -- used to compute the HP bar fill fraction
-    lowHpPct  = 0.4,         -- fraction below which bar turns red
-}
+    -- Player HUD
+    player = {
+        topBarH   = 36,
+        rightColW = 180,
+        hpBarW    = 160,
+        hpBarH    = 12,
+        maxHp     = 10,     -- used to compute HP bar fill fraction
+        lowHpPct  = 0.4,    -- fraction below which bar turns red
+    },
 
--- DM HUD
-Config.hud.dm = {
-    topBarH   = 40,
-    botBarH   = 72,
-    rightColW = 190,
-    lowEssPct = 0.25,        -- fraction below which essence bar pulses red
-    essBarW   = 200,
-    essBarH   = 13,
+    -- DM HUD
+    dm = {
+        topBarH   = 40,
+        botBarH   = 72,
+        rightColW = 190,
+        essBarW   = 200,
+        essBarH   = 13,
+        lowEssPct = 0.25,   -- fraction below which essence bar pulses red
+    },
 }
 
 
 -- ---------------------------------------------------------------------------
 --  COLOURS
 -- ---------------------------------------------------------------------------
+Config.colours = {}
 
 -- Player HUD palette
-Config.colours = {}
 Config.colours.playerHud = {
     bg        = {0.05, 0.05, 0.06},
     panel     = {0.08, 0.08, 0.10},
@@ -209,7 +221,7 @@ Config.colours.dmHud = {
     title      = {0.80, 0.55, 1.00},
 }
 
--- DM map tile colours  (index matches tile ID)
+-- DM map tile colours  (index matches tile ID in Config.map.tiles)
 Config.colours.dmTiles = {
     [0] = {0.18, 0.16, 0.22},   -- floor
     [1] = {0.08, 0.07, 0.10},   -- wall
@@ -231,6 +243,7 @@ Config.keys = {
     fogToggle = "f2",
     dbgToggle = "f3",
     dmSwitch  = "f5",
+    cfgReload = "f9",   -- dev only: hot-reload config without restarting
 
     move = {
         up    = "up",
@@ -239,7 +252,7 @@ Config.keys = {
         right = "right",
     },
 
-    -- DM ability keys in order (matches Config.dm.abilities order)
+    -- DM ability keys in order — must match Config.dm.abilities order
     dmAbilities = {"q", "w", "e", "r", "t", "y"},
 }
 
@@ -251,13 +264,26 @@ Config.assets = {
     tileSheet = "assets/media/images/sheets/tiles.png",
 }
 
--- Quad definitions: {srcX, srcY, w, h} in the tile sheet
--- Row 0 (y=0)  → map tiles 0-7
--- Row 1 (y=32) → player sprite at column 0
+-- Quad layout in the tile sheet
+-- Row 0 (srcY = 0)  → map tiles 0-7, each 32×32
+-- Row 1 (srcY = 32) → player sprite at column 0
 Config.assets.quads = {
     mapTiles   = { rowY = 0,  count = 8, size = 32 },
-    playerTile = { srcX = 0, srcY = 32, w = 32, h = 32 },
+    playerTile = { srcX = 0,  srcY  = 32, w = 32, h = 32 },
 }
+
+
+-- ---------------------------------------------------------------------------
+--  HOT-RELOAD HELPER  (dev only)
+-- ---------------------------------------------------------------------------
+-- Call from love.keypressed:
+--   if key == Config.keys.cfgReload then Config = Config.reload() end
+function Config.reload()
+    package.loaded["config"] = nil
+    local fresh = require("config")
+    print("[Config] reloaded.")
+    return fresh
+end
 
 
 return Config
