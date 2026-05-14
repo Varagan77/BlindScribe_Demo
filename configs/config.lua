@@ -1,6 +1,6 @@
 -- =============================================================================
 --  config.lua  —  Central configuration for BlindScribe
---  DO NOT HARDCODE PLEASE I BEG YAH.
+--  DO NOT HARDCODE PLEASE I BEG.
 -- =============================================================================
 
 Config = {}
@@ -90,7 +90,7 @@ Config.fog = {
 Config.dm = {
     essence      = 100,
     essenceMax   = 100,
-    essenceDrain = 1.5,     -- essence lost per second (passive drain)
+    essenceDrain = 0,     -- essence lost per second (passive drain)
     lowEssPct    = 0.25,    -- fraction at which "LOW" warning appears
 
     -- Essence reward when a pawn takes damage
@@ -286,4 +286,9 @@ function Config.reload()
 end
 
 
+ 
+
+
+
 return Config
+

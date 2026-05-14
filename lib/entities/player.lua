@@ -1,9 +1,11 @@
 local playerSprite
 local playerQuad
 
+
+local F = {}
+
 function player_load()
 	local PC = Config.player
-	local T  = Config.map.tiles
 
 	player = {
 		grid_x = spawnX * 32,
@@ -26,17 +28,24 @@ function player_load()
 
 	fog_reveal(spawnX, spawnY)
 
-	local AQ = Config.assets.quads.playerTile
+	local AQ     = Config.assets.quads.playerTile
 	playerSprite = love.graphics.newImage(Config.assets.tileSheet)
 	playerQuad   = love.graphics.newQuad(
 		AQ.srcX, AQ.srcY,
 		AQ.w,    AQ.h,
 		playerSprite:getDimensions()
 	)
+
+	F.f13 = love.graphics.newFont(13)
+	F.f16 = love.graphics.newFont(16)
+	F.f20 = love.graphics.newFont(20)
+	F.f28 = love.graphics.newFont(28)
 end
 
 
 function player_update(dt)
+	if not player then return end
+
 	player.act_y = player.act_y - ((player.act_y - player.grid_y) * player.speed * dt)
 	player.act_x = player.act_x - ((player.act_x - player.grid_x) * player.speed * dt)
 
@@ -44,7 +53,14 @@ function player_update(dt)
 		entryTimer = entryTimer - dt
 	end
 
-	if not diceRoll then return end
+	if not diceRoll then
+		
+		if player.hp <= 0 and gameState == "newGame" then
+			player.hp = 0
+			gameState = "lose"
+		end
+		return
+	end
 
 	local D = Config.player.dice
 	diceRoll.elapsed = diceRoll.elapsed + dt
@@ -52,11 +68,15 @@ function player_update(dt)
 
 	if e >= D.totalTime then
 		diceRoll = nil
+		
+		if player.hp <= 0 and gameState == "newGame" then
+			player.hp = 0
+			gameState = "lose"
+		end
 
 	elseif e >= D.spinStart and e < D.spinEnd then
 		local progress = (e - D.spinStart) / (D.spinEnd - D.spinStart)
 		local interval = D.minInterval + progress * (D.maxInterval - D.minInterval)
-
 		diceRoll.spinTimer = diceRoll.spinTimer + dt
 		if diceRoll.spinTimer >= interval then
 			diceRoll.spinTimer = 0
@@ -103,18 +123,14 @@ function drawEntryPopup()
 	local elapsed = total - entryTimer
 
 	local alpha
-	if elapsed < 1 then
-		alpha = elapsed
-	elseif entryTimer < 1 then
-		alpha = entryTimer
-	else
-		alpha = 1
-	end
+	if elapsed < 1 then       alpha = elapsed
+	elseif entryTimer < 1 then alpha = entryTimer
+	else                       alpha = 1 end
 
-	love.graphics.setFont(love.graphics.newFont(20))
+	love.graphics.setFont(F.f20)
 	love.graphics.setColor(0.7, 0.9, 1, alpha * 0.85)
 	love.graphics.printf("You entered the dungeon...", 0, sh / 2 - 60, sw, "center")
-	love.graphics.setFont(love.graphics.newFont(13))
+	love.graphics.setFont(F.f13)
 	love.graphics.setColor(0.6, 0.6, 0.6, alpha * 0.6)
 	love.graphics.printf("find the exit", 0, sh / 2 - 30, sw, "center")
 	love.graphics.setColor(1, 1, 1)
@@ -191,14 +207,14 @@ function drawDiceCutscene()
 	end
 
 	if numText then
-		love.graphics.setFont(love.graphics.newFont(28))
+		love.graphics.setFont(F.f28)
 		love.graphics.setColor(1, 1, 1, numAlpha)
 		love.graphics.printf(numText, cx - size, cy - size + 10, size * 2, "center")
 	end
 
 	if e >= D.spinEnd + 0.5 then
 		local labelAlpha = math.min((e - (D.spinEnd + 0.5)) / 0.3, 1)
-		love.graphics.setFont(love.graphics.newFont(16))
+		love.graphics.setFont(F.f16)
 		if isGold then
 			love.graphics.setColor(1, 1, 0.4, labelAlpha)
 			love.graphics.printf("+" .. diceRoll.result .. " gold", 0, cy + size + 20, sw, "center")
@@ -210,7 +226,7 @@ function drawDiceCutscene()
 
 	if e < D.spinStart then
 		local suspenseAlpha = math.min(e / 0.4, 1)
-		love.graphics.setFont(love.graphics.newFont(13))
+		love.graphics.setFont(F.f13)
 		if isGold then
 			love.graphics.setColor(1, 1, 0.5, suspenseAlpha * 0.7)
 			love.graphics.printf("something shimmers...", 0, cy + size + 20, sw, "center")
@@ -231,18 +247,19 @@ function handleTile(tileX, tileY)
 
 	if tile == T.gold then
 		local roll = love.math.random(1, 6)
-		player.gold = player.gold + roll
+		player.gold       = player.gold + roll
 		map[tileY][tileX] = T.floor
 		diceRoll = { isGold = true, result = roll, showing = 1, elapsed = 0, spinTimer = 0, angle = 0 }
 		hud_log("Found gold!")
 
 	elseif tile == T.enemy then
 		local roll = love.math.random(1, 6)
-		player.hp          = player.hp - roll
+		player.hp          = math.max(0, player.hp - roll)
 		player.damageTaken = player.damageTaken + roll
 		map[tileY][tileX]  = T.floor
 		diceRoll = { isGold = false, result = roll, showing = 1, elapsed = 0, spinTimer = 0, angle = 0 }
 		hud_log("Attacked! -" .. roll .. " HP")
+		if DM then dm_onPawnDamage(roll) end
 
 	elseif tile == T.shop then
 		player.shopVisited = true
@@ -270,7 +287,7 @@ end
 
 function player_keypressed(key)
 	if not gridReady()        then return end
-	if gameState == "win"     then return end
+	if gameState ~= "newGame" then return end
 	if diceRoll               then return end
 
 	local K     = Config.keys.move

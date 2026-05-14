@@ -26,20 +26,24 @@ local function panel(x, y, w, h, r, borderCol)
 	love.graphics.rectangle("line", x, y, w, h, r, r)
 end
 
+
+local F = {}
+
 local function label(txt, x, y, col)
 	setC(col or C.label)
-	love.graphics.setFont(love.graphics.newFont(10))
-	love.graphics.print(txt, x, y)
-end
-
-local function value(txt, x, y, col, size)
-	setC(col or C.text)
-	love.graphics.setFont(love.graphics.newFont(size or 13))
+	love.graphics.setFont(F.f10)
 	love.graphics.print(txt, x, y)
 end
 
 
 function dm_hud_load()
+	F.f9  = love.graphics.newFont(9)
+	F.f10 = love.graphics.newFont(10)
+	F.f11 = love.graphics.newFont(11)
+	F.f12 = love.graphics.newFont(12)
+	F.f13 = love.graphics.newFont(13)
+	F.f15 = love.graphics.newFont(15)
+	F.f30 = love.graphics.newFont(30)
 	dm_hud_resize()
 end
 
@@ -80,6 +84,16 @@ function dm_hud_draw()
 	local p  = DM_HUD.PAD
 	local mr = DM_HUD.mapRect
 
+	
+	if gameState == "dm_lose" then
+		setC(C.bg)
+		love.graphics.rectangle("fill", 0, 0, sw, sh)
+		dm_hud_drawLoseScreen(sw, sh)
+		love.graphics.setColor(1, 1, 1)
+		return
+	end
+
+	
 	setC(C.bg)
 	love.graphics.rectangle("fill", 0, 0, sw, DM_HUD.TOP_BAR_H)
 	love.graphics.rectangle("fill", sw - DM_HUD.RIGHT_COL_W - p, DM_HUD.TOP_BAR_H, DM_HUD.RIGHT_COL_W + p, sh - DM_HUD.TOP_BAR_H)
@@ -96,10 +110,6 @@ function dm_hud_draw()
 	dm_hud_drawRightCol(sw, sh, p)
 	dm_hud_drawAbilityBar(sw, sh, p)
 
-	if gameState == "dm_lose" then
-		dm_hud_drawLoseScreen(sw, sh)
-	end
-
 	love.graphics.setColor(1, 1, 1)
 end
 
@@ -115,7 +125,7 @@ function dm_hud_drawTopBar(sw, sh, p)
 	love.graphics.rectangle("fill", badgeX, badgeY, badgeW, tbH - 14, 4, 4)
 	setC(C.accent)
 	love.graphics.rectangle("line", badgeX, badgeY, badgeW, tbH - 14, 4, 4)
-	love.graphics.setFont(love.graphics.newFont(12))
+	love.graphics.setFont(F.f12)
 	setC(C.title)
 	love.graphics.printf("DUNGEON MASTER", badgeX, badgeY + 5, badgeW, "center")
 
@@ -136,7 +146,7 @@ function dm_hud_drawTopBar(sw, sh, p)
 	end
 	setC(C.border)
 	love.graphics.rectangle("line", essX, essBarY, essBarW, essBarH, 3, 3)
-	love.graphics.setFont(love.graphics.newFont(10))
+	love.graphics.setFont(F.f10)
 	setC(C.text)
 	love.graphics.printf(math.floor(DM.essence) .. " / " .. DM.essenceMax, essX, essBarY + 1, essBarW, "center")
 
@@ -144,7 +154,7 @@ function dm_hud_drawTopBar(sw, sh, p)
 		local pulse = math.abs(math.sin(love.timer.getTime() * 4))
 		setC(C.danger, pulse * 0.6)
 		love.graphics.rectangle("fill", essX, essBarY, essBarW, essBarH, 3, 3)
-		love.graphics.setFont(love.graphics.newFont(10))
+		love.graphics.setFont(F.f10)
 		setC(C.danger, pulse)
 		love.graphics.printf("LOW", essX, essBarY + 1, essBarW, "center")
 	end
@@ -152,7 +162,7 @@ function dm_hud_drawTopBar(sw, sh, p)
 	if DM_HUD.logTimer > 0 then
 		local a = math.min(DM_HUD.logTimer, 1)
 		setC(C.accent, a)
-		love.graphics.setFont(love.graphics.newFont(13))
+		love.graphics.setFont(F.f13)
 		love.graphics.printf(DM_HUD.logMsg, 0, 11, sw, "center")
 	end
 
@@ -164,7 +174,7 @@ function dm_hud_drawTopBar(sw, sh, p)
 	setC(C.border)
 	love.graphics.rectangle("line", btnX, btnY, btnW, btnH, 4, 4)
 	setC(C.text)
-	love.graphics.setFont(love.graphics.newFont(11))
+	love.graphics.setFont(F.f11)
 	love.graphics.printf("MENU  [ESC]", btnX, btnY + 5, btnW, "center")
 end
 
@@ -208,7 +218,7 @@ function dm_hud_drawRightCol(sw, sh, p)
 		setC(pc)
 		love.graphics.circle("fill", px + 8, cy + 12, 5)
 		setC(C.text)
-		love.graphics.setFont(love.graphics.newFont(12))
+		love.graphics.setFont(F.f12)
 		love.graphics.print(pawn.name or ("Pawn " .. i), px + 18, cy + 6)
 
 		local hpBarW  = pw - 4
@@ -226,11 +236,11 @@ function dm_hud_drawRightCol(sw, sh, p)
 		end
 		setC(C.border)
 		love.graphics.rectangle("line", px, hpBarY, hpBarW, hpBarH, 2, 2)
-		love.graphics.setFont(love.graphics.newFont(9))
+		love.graphics.setFont(F.f9)
 		setC(C.text)
 		love.graphics.printf((pawn.hp or 0) .. " HP", px, hpBarY, hpBarW, "center")
 
-		love.graphics.setFont(love.graphics.newFont(10))
+		love.graphics.setFont(F.f10)
 		setC({1.00, 0.85, 0.25})
 		love.graphics.print("G " .. (pawn.gold or 0), px, cy + 37)
 		setC(C.accent)
@@ -240,7 +250,7 @@ function dm_hud_drawRightCol(sw, sh, p)
 			local tx = math.floor(pawn.grid_x / 32)
 			local ty = math.floor(pawn.grid_y / 32)
 			setC(C.label)
-			love.graphics.setFont(love.graphics.newFont(9))
+			love.graphics.setFont(F.f9)
 			love.graphics.print("(" .. tx .. "," .. ty .. ")", px, cy + 50)
 		end
 
@@ -248,7 +258,7 @@ function dm_hud_drawRightCol(sw, sh, p)
 			setC({0, 0, 0}, 0.65)
 			love.graphics.rectangle("fill", px - 2, cy, pw + 4, cardH, 4, 4)
 			setC(C.danger)
-			love.graphics.setFont(love.graphics.newFont(11))
+			love.graphics.setFont(F.f11)
 			love.graphics.printf("DEAD", px - 2, cy + cardH / 2 - 7, pw + 4, "center")
 		end
 
@@ -261,7 +271,7 @@ function dm_hud_drawRightCol(sw, sh, p)
 	love.graphics.line(rcX + 6, botY, rcX + rcW - 6, botY)
 	label("Pawn events", rcX + 8, botY + 4, C.label)
 	setC(C.text)
-	love.graphics.setFont(love.graphics.newFont(11))
+	love.graphics.setFont(F.f11)
 	love.graphics.print("Dmg dealt : "  .. (DM.totalDamageDealt or 0),             rcX + 8, botY + 16)
 	love.graphics.print("Ess. earned: " .. math.floor(DM.totalEssEarned or 0), rcX + 8, botY + 30)
 end
@@ -298,15 +308,15 @@ function dm_hud_drawAbilityBar(sw, sh, p)
 		love.graphics.rectangle("line", bx, btnY, btnW, btnH, 4, 4)
 
 		setC(ready and C.accent or C.label)
-		love.graphics.setFont(love.graphics.newFont(9))
+		love.graphics.setFont(F.f9)
 		love.graphics.printf("[" .. (K[i] or "?"):upper() .. "]", bx, btnY + 2, btnW, "center")
 
 		setC(ready and C.text or C.label)
-		love.graphics.setFont(love.graphics.newFont(11))
+		love.graphics.setFont(F.f11)
 		love.graphics.printf(ab.name, bx, btnY + 13, btnW, "center")
 
 		setC(canAfford and C.essFill or C.danger)
-		love.graphics.setFont(love.graphics.newFont(9))
+		love.graphics.setFont(F.f9)
 		love.graphics.printf(ab.cost .. " ess", bx, btnY + 27, btnW, "center")
 
 		if onCd then
@@ -314,7 +324,7 @@ function dm_hud_drawAbilityBar(sw, sh, p)
 			setC({0, 0, 0}, 0.55 * cdPct)
 			love.graphics.rectangle("fill", bx, btnY, btnW, btnH * cdPct, 4, 4)
 			setC(C.warn)
-			love.graphics.setFont(love.graphics.newFont(10))
+			love.graphics.setFont(F.f10)
 			love.graphics.printf(string.format("%.1fs", ab.cooldown), bx, btnY + btnH / 2 - 6, btnW, "center")
 		end
 
@@ -329,21 +339,25 @@ end
 
 
 function dm_hud_drawLoseScreen(sw, sh)
-	setC({0, 0, 0}, 0.86)
+	
+	setC({0, 0, 0}, 0.55)
 	love.graphics.rectangle("fill", 0, 0, sw, sh)
-	love.graphics.setFont(love.graphics.newFont(30))
+
+	love.graphics.setFont(F.f30)
 	setC(C.danger)
-	love.graphics.printf("Your Essence fades...", 0, sh / 2 - 80, sw, "center")
-	love.graphics.setFont(love.graphics.newFont(15))
+	love.graphics.printf("Your Essence fades...", 0, sh / 2 - 90, sw, "center")
+
+	love.graphics.setFont(F.f15)
 	setC(C.text)
 	love.graphics.printf(
 		"The dungeon slips beyond your control.\n\n" ..
 		"Damage dealt to Pawns : " .. (DM.totalDamageDealt or 0) .. "\n" ..
 		"Essence earned        : " .. math.floor(DM.totalEssEarned or 0),
-		0, sh / 2 - 10, sw, "center"
+		0, sh / 2 - 20, sw, "center"
 	)
+
 	setC(C.label)
-	love.graphics.setFont(love.graphics.newFont(13))
+	love.graphics.setFont(F.f13)
 	love.graphics.printf("Press ENTER to return to menu", 0, sh / 2 + 100, sw, "center")
 end
 

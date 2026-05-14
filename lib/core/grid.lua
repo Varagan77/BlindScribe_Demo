@@ -12,7 +12,7 @@ function grid_load(seed)
 
 	tileset = love.graphics.newImage(Config.assets.tileSheet)
 
-	for i = 0, MC.tiles.gold do   -- tiles 0-7
+	for i = 0, MC.tiles.gold do   
 		quads[i] = love.graphics.newQuad(
 			i * MC.tileSize,
 			0,
