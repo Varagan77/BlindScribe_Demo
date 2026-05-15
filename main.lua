@@ -1,7 +1,7 @@
 Config = require("Prefabs.Config.config")
 
 require("Code.Scripts.ScriptStates.StateMenu.menu")
-require("Code.Scripts.ScriptPlayer.PlayerMovement.player")
+require("Code.Scripts.ScriptPlayer.PlayerMovement.playerMovement")
 require("Code.Scripts.ScriptMap.MapGeneration.grid")
 require("Code.Scripts.ScriptPlayer.PlayerHUD.player_hud")
 require("Code.Scripts.ScriptPlayer.PlayerCamera.camera")
