@@ -317,5 +317,6 @@ function player_keypressed(key)
 		player.movePoints = player.movePoints + 1
 		fog_reveal(newX, newY)
 		handleTile(newX, newY)
+		if DM then dm_onPawnMove() end
 	end
 end

@@ -83,10 +83,7 @@ function dm_update(dt)
 	dm_hud_update(dt)
 
 	
-	DM.essence = math.max(0, DM.essence - DM.essenceDrain * dt)
-	if DM.essence <= 0 and gameState == "dm_game" then
-		gameState = "dm_lose"
-	end
+	
 
 	
 	for _, ab in ipairs(DM.abilities) do
@@ -136,6 +133,17 @@ function dm_onPawnDamage(amount)
 	DM.totalEssEarned    = DM.totalEssEarned   + gain
 	dm_hud_log("Pawn took " .. amount .. " dmg — +" .. gain .. " essence")
 end
+
+
+
+function dm_onPawnMove()
+	if not DM then return end
+	DM.essence = math.max(0, DM.essence - Config.dm.essenceDrain)
+	if DM.essence <= 0 and gameState == "dm_game" then
+		gameState = "dm_lose"
+	end
+end
+
 
 
 function dm_drawMap()

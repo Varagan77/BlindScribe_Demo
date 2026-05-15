@@ -90,7 +90,7 @@ Config.fog = {
 Config.dm = {
     essence      = 100,
     essenceMax   = 100,
-    essenceDrain = 0,     -- essence lost per second (passive drain)
+    essenceDrain = 3,     -- essence lost per pawn move (turn-based drain)
     lowEssPct    = 0.25,    -- fraction at which "LOW" warning appears
 
     -- Essence reward when a pawn takes damage
@@ -291,4 +291,3 @@ end
 
 
 return Config
-
