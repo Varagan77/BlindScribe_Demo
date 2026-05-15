@@ -29,7 +29,7 @@ function player_load()
 	fog_reveal(spawnX, spawnY)
 
 	local AQ     = Config.assets.quads.playerTile
-	playerSprite = love.graphics.newImage(Config.assets.tileSheet)
+	playerSprite = love.graphics.newImage("Art/SpriteSheet/tiles.png")
 	playerQuad   = love.graphics.newQuad(
 		AQ.srcX, AQ.srcY,
 		AQ.w,    AQ.h,

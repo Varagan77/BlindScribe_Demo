@@ -2,7 +2,7 @@ local tileset
 local quads = {}
 
 function grid_load(seed)
-	local mapModule = require("lib.states.map")
+	local mapModule = require("Code.Scripts.ScriptMap.MapGeneration.map")
 	local MC = Config.map
 
 	worldSeed = seed or os.time()
@@ -10,7 +10,7 @@ function grid_load(seed)
 
 	map, spawnX, spawnY, carveLog = mapModule.generate(MC.cols, MC.rows)
 
-	tileset = love.graphics.newImage(Config.assets.tileSheet)
+	tileset = love.graphics.newImage("Art/SpriteSheet/tiles.png")
 
 	for i = 0, MC.tiles.gold do   
 		quads[i] = love.graphics.newQuad(
