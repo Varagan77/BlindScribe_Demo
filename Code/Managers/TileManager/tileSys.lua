@@ -1,5 +1,8 @@
 local TileSys = {}
 
+-- Pending stat change stored during dice animation
+TileSys.pending = nil
+
 function TileSys.handleStep(tile, x, y, ctx)
 	local T = Config.map.tiles
 
@@ -33,13 +36,22 @@ function TileSys.handleStep(tile, x, y, ctx)
 	return nil
 end
 
-function TileSys.resolveEncounter(kind, roll, player)
-	if kind == "gold" then
-		player.gold = player.gold + roll
+-- Called by Encounter — stores result but does NOT apply yet
+function TileSys.resolveEncounter(kind, roll, p)
+	TileSys.pending = { kind = kind, roll = roll, player = p }
+end
 
-	elseif kind == "enemy" then
-		player.hp = math.max(0, player.hp - roll)
-		player.damageTaken = player.damageTaken + roll
+-- Called by Dice when animation finishes — NOW apply the stat change
+function TileSys.applyPending()
+	local pd = TileSys.pending
+	if not pd then return end
+	TileSys.pending = nil
+
+	if pd.kind == "gold" then
+		pd.player.gold = pd.player.gold + pd.roll
+	elseif pd.kind == "enemy" then
+		pd.player.hp = math.max(0, pd.player.hp - pd.roll)
+		pd.player.damageTaken = (pd.player.damageTaken or 0) + pd.roll
 	end
 end
 

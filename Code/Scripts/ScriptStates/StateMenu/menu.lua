@@ -43,13 +43,24 @@ end
 
 -- ---------------------------------------------------------------------------
 function menu.update(dt)
-	-- menu is static UI, nothing needed here
+	-- delegate to active sub-state if one is open
+	local state = states[gameState]
+	if state and state.update then
+		state.update(dt)
+	end
 end
 
 -- ---------------------------------------------------------------------------
 function menu.keypressed(key)
 
-	if gameState ~= "menu" then return end
+	-- delegate to the active sub-state when we're inside one
+	if gameState ~= "menu" then
+		local state = states[gameState]
+		if state and state.keypressed then
+			state.keypressed(key)
+		end
+		return
+	end
 
 	if key == "down" then
 		selectedIndex = (selectedIndex % #menuItems) + 1
@@ -64,15 +75,8 @@ function menu.keypressed(key)
 
 		if not state then return end
 
-		-- always allow init
 		if state.load then state.load() end
-
-		-- ONLY singleplayer enters gameplay
-		if chosen == "singleplayer" then
-			if state.enter then state.enter() end
-		else
-			gameState = chosen
-		end
+		if state.enter then state.enter() end
 	end
 end
 
@@ -81,6 +85,17 @@ function menu.draw()
 
 	local sw = love.graphics.getWidth()
 	local sh = love.graphics.getHeight()
+
+	-- if a sub-state is active, delegate drawing to it
+	if gameState ~= "menu" then
+		local state = states[gameState]
+		if state and state.draw then
+			love.graphics.setFont(bigFont)
+			love.graphics.setColor(1, 1, 1)
+			state.draw(sw, sh)
+		end
+		return
+	end
 
 	love.graphics.setFont(bigFont)
 	love.graphics.setColor(1, 1, 1)

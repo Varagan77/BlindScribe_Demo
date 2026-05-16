@@ -66,18 +66,24 @@ function grid_draw()
 		end
 	end
 
-	if not debugDone then
-		love.graphics.setColor(1, 1, 1, 0.7)
-		love.graphics.setFont(love.graphics.newFont(12))
-		love.graphics.print("Generating... " .. debugStep .. "/" .. #carveLog, 8, 8)
-	end
-
 	love.graphics.setColor(1, 1, 1)
 end
 
-function testMap(x, y)
-	local newX = (player.grid_x / 32) + x
-	local newY = (player.grid_y / 32) + y
+function grid_draw_hud()
+	-- drawn in screen space (after camera_detach)
+	if not debugDone then
+		love.graphics.setColor(1, 1, 1, 0.9)
+		love.graphics.setFont(love.graphics.newFont(12))
+		love.graphics.print("Generating... " .. debugStep .. "/" .. #carveLog, 8, 8)
+		love.graphics.setColor(1, 1, 1)
+	end
+end
+
+function testMap(dx, dy, playerRef)
+	local p = playerRef or player
+	if not p then return false end
+	local newX = (p.grid_x / 32) + dx
+	local newY = (p.grid_y / 32) + dy
 	if not map[newY] or not map[newY][newX] then return false end
 	if map[newY][newX] == Config.map.tiles.wall then return false end
 	return true
@@ -85,4 +91,12 @@ end
 
 function gridReady()
 	return debugDone
+end
+
+-- Returns tile ID at map col/row, or nil if out of bounds
+function grid_getTile(col, row)
+	local activeMap = debugDone and map or debugMap
+	if not activeMap then return nil end
+	if not activeMap[row] then return nil end
+	return activeMap[row][col]
 end

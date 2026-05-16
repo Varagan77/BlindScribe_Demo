@@ -2,6 +2,8 @@
 --  CAMERA
 -- ---------------------------------------------------------------------------
 
+-- camera table is initialised at load time with config values only.
+-- Do NOT read 'player' here — player doesn't exist yet when this file is required.
 camera = {
 	x       = 0,
 	y       = 0,
@@ -17,14 +19,15 @@ local function getScreenSize()
 end
 
 function camera_load()
+	if not player then return end
 	local sw, sh = getScreenSize()
-
 	camera.x = player.act_x - sw / 2 + 16
 	camera.y = player.act_y - sh / 2 + 16
 end
 
 function camera_update(dt)
 	if not camera.enabled then return end
+	if not player then return end
 
 	local sw, sh = getScreenSize()
 
@@ -33,18 +36,13 @@ function camera_update(dt)
 
 	camera.x = camera.x + (tx - camera.x) * camera.speed * dt
 	camera.y = camera.y + (ty - camera.y) * camera.speed * dt
-	-- camera.zoom = camera.zoom + (Config.camera.zoom - camera.zoom) * dt * camera.speed --keep out for now
 end
 
 function camera_attach()
 	if not camera.enabled then return end
 
 	love.graphics.push()
-
-	-- scale world first (zoom)
 	love.graphics.scale(camera.zoom, camera.zoom)
-
-	-- then translate camera position
 	love.graphics.translate(
 		-math.floor(camera.x),
 		-math.floor(camera.y)
@@ -63,7 +61,7 @@ function camera_keypressed(key)
 		if not camera.enabled then
 			camera.x = 0
 			camera.y = 0
-		else
+		elseif player then
 			local sw, sh = getScreenSize()
 			camera.x = player.act_x - sw / 2 + 16
 			camera.y = player.act_y - sh / 2 + 16

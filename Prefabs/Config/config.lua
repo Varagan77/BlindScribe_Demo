@@ -358,6 +358,15 @@ Config.colours.dmTiles = {
 
 
 -- ---------------------------------------------------------------------------
+--  FOG OF WAR
+-- ---------------------------------------------------------------------------
+Config.fog = {
+    enabled = true,
+    radius  = 1,    -- tiles revealed around the player (tight lantern)
+}
+
+
+-- ---------------------------------------------------------------------------
 --  KEYBINDS
 -- ---------------------------------------------------------------------------
 Config.keys = {
@@ -384,7 +393,7 @@ Config.keys = {
 --  ASSETS
 -- ---------------------------------------------------------------------------
 Config.assets = {
-    tileSheet = "assets/media/images/sheets/tiles.png",
+    tileSheet = "Art/SpriteSheet/tiles.png",
 }
 
 -- Quad layout in the tile sheet

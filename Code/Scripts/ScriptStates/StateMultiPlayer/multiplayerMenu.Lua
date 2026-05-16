@@ -4,7 +4,7 @@ function multiplayer.load()
 end
 
 function multiplayer.enter()
-	gameState = "multiPlayer"
+	gameState = "multiplayer"
 end
 
 function multiplayer.update(dt)

@@ -3,13 +3,18 @@ local Dice = {}
 local Config
 local Fonts
 local D
+local TileSys  -- loaded lazily to avoid circular require
 
 Dice.state = nil
 
 function Dice.load(config, fonts)
 	Config = config
-	Fonts = fonts
+	Fonts = {
+		f28 = (fonts and fonts.f28) or love.graphics.newFont(28),
+		f16 = (fonts and fonts.f16) or love.graphics.newFont(16),
+	}
 	D = Config.player.dice
+	TileSys = TileSys or require("Code.Managers.TileManager.tileSys")
 end
 
 function Dice.startRoll(isGold, result)
@@ -34,8 +39,11 @@ function Dice.update(dt)
 	dice.elapsed = dice.elapsed + dt
 	local e = dice.elapsed
 
-	-- end cutscene
+	-- end cutscene — apply deferred stat change NOW
 	if e >= D.totalTime then
+		if TileSys and TileSys.applyPending then
+			TileSys.applyPending()
+		end
 		Dice.state = nil
 		return
 	end

@@ -5,7 +5,7 @@ local Dice = require("Code.Scripts.ScriptStates.ScriptDice.diceEvent")
 local Encounter = require("Code.Scripts.ScriptPlayer.PlayerEncounter.playerEncounterEvent")
 local TileSys = require("Code.Managers.TileManager.tileSys")
 
-local player = {}
+-- 'player' is intentionally a global so grid.lua, hud, camera etc. can all read it
 
 function player_load()
 	local PC = Config.player
@@ -49,7 +49,6 @@ function player_draw()
 end
 
 function player_keypressed(key)
-	if Dice.isActive() or Encounter.isActive() then return end
 	if gameState ~= "newGame" then return end
 
 	local K = Config.keys.move
