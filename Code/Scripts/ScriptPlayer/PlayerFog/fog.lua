@@ -19,6 +19,21 @@ function fog_reveal(tileX, tileY)
 	end
 end
 
+-- NEW: radius-based reveal (additive, does not replace anything)
+function fog_update(tileX, tileY)
+	if not fog.enabled then return end
+
+	local r = Config.fog.radius or 1
+
+	for y = tileY - r, tileY + r do
+		for x = tileX - r, tileX + r do
+			if fog.visited[y] and fog.visited[y][x] ~= nil then
+				fog.visited[y][x] = true
+			end
+		end
+	end
+end
+
 function fog_draw()
 	if not fog.enabled then return end
 	love.graphics.setColor(0, 0, 0, 1)

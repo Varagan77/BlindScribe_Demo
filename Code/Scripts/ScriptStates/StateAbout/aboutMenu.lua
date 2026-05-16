@@ -3,30 +3,19 @@ local about = {}
 function about.load()
 end
 
-function about.update(dt)
+function about.enter()
+	gameState = "about"
 end
 
 function about.keypressed(key)
-	if key == "escape" or key == "return" then
+	if key == "escape" then
 		gameState = "menu"
 		selectedIndex = 1
 	end
 end
 
 function about.draw(sw, sh)
-	love.graphics.setColor(1, 1, 1, 1)
-	love.graphics.printf("About", 0, sh / 2 - 80, sw, "center")
-
-	love.graphics.setFont(love.graphics.newFont(14))
-	love.graphics.setColor(0.6, 0.6, 0.6, 1)
-
-	love.graphics.printf(
-		"BlindScribe\nA dungeon crawler with a Dungeon Master mode.\n\nPress ESC or ENTER to return.",
-		0,
-		sh / 2,
-		sw,
-		"center"
-	)
+	love.graphics.printf("About", 0, sh/2, sw, "center")
 end
 
 return about

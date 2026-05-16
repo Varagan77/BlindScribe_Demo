@@ -64,6 +64,26 @@ Config.player = {
     entryPopupDuration = 3.5,   -- seconds the "You entered…" message stays
 }
 
+-- ---------------------------------------------------------------------------
+--  DICE SYSTEM (GLOBAL)
+-- ---------------------------------------------------------------------------
+Config.dice = {
+    sides = 6,
+
+    -- visuals / feel
+    spinStart   = 0.8,
+    spinEnd     = 3.0,
+    totalTime   = 4.0,
+
+    minInterval = 0.06,
+    maxInterval = 0.31,
+
+    -- colors
+    goldColor = {1.0, 0.85, 0.2},
+    redColor  = {0.9, 0.2, 0.2},
+
+    overlayAlpha = 0.75,
+}
 
 -- ---------------------------------------------------------------------------
 --  CAMERA
@@ -73,6 +93,11 @@ Config.camera = {
     speed   = 6,    -- lerp multiplier used in camera_update  (camera.speed in camera.lua)
                     -- NOTE: camera.lua currently uses camera.speed, not camera.lerp.
                     --       Rename the field in camera.lua if you want "lerp" semantics (0-1).
+    zoom    = 2,   --  1 = normal, 2 = zoom in, 0.5 = zoom out
+    --zoomSpeed = 5, -- optional smoothing
+
+     --viewTilesX = 9,
+    --viewTilesY = 9,  --grid
 }
 
 
@@ -81,6 +106,7 @@ Config.camera = {
 -- ---------------------------------------------------------------------------
 Config.fog = {
     enabled = true,
+    radius = 1, -- 1 = 3x3 view, 2 = 5x5, etc.
 }
 
 
@@ -179,7 +205,104 @@ Config.hud = {
     },
 }
 
+-- ---------------------------------------------------------------------------
+--  SHOP SYSTEM (3 PATHS)
+-- ---------------------------------------------------------------------------
+Config.shop = {
+    enabled = true,
 
+    rerollCost = 2,
+
+    groups = {
+
+        spritus = {
+            name = "Spritus",
+            description = "Healing and restoration",
+
+            items = {
+                {
+                    id = "potion_small",
+                    name = "Small Potion",
+                    price = 5,
+                    effect = "heal",
+                    value = 3
+                },
+                {
+                    id = "potion_large",
+                    name = "Large Potion",
+                    price = 10,
+                    effect = "heal",
+                    value = 7
+                },
+                {
+                    id = "feast",
+                    name = "Blessed Feast",
+                    price = 12,
+                    effect = "heal",
+                    value = 2
+                }
+            }
+        },
+
+        kinesis = {
+            name = "Kinesis",
+            description = "Movement and flow",
+
+            items = {
+                {
+                    id = "boots_light",
+                    name = "Light Boots",
+                    price = 6,
+                    effect = "move",
+                    value = 1
+                },
+                {
+                    id = "wind_step",
+                    name = "Wind Step",
+                    price = 9,
+                    effect = "move",
+                    value = 2
+                },
+                {
+                    id = "phase_token",
+                    name = "Phase Token",
+                    price = 12,
+                    effect = "move",
+                    value = 1
+                }
+            }
+        },
+
+        wrath = {
+            name = "Wrath",
+            description = "Risk and destruction",
+
+            items = {
+                {
+                    id = "cursed_barrel",
+                    name = "Barrel of Rats",
+                    price = 6,
+                    effect = "spawn_enemy",
+                    value = 1
+                },
+                {
+                    id = "blood_contract",
+                    name = "Blood Contract",
+                    price = 10,
+                    effect = "spawn_enemy",
+                    value = 1
+                },
+                {
+                    id = "doom_echo",
+                    name = "Echo of Doom",
+                    price = 12,
+                    effect = "spawn_enemy",
+                    value = 2
+                }
+            }
+        }
+    }
+}
 -- ---------------------------------------------------------------------------
 --  COLOURS
 -- ---------------------------------------------------------------------------
