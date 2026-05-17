@@ -31,14 +31,13 @@ Config.map = {
 
     -- Tile IDs  (match quads[i] in grid.lua — index 0-based)
     tiles = {
-        floor     = 0,
-        wall      = 1,
-        shop      = 2,
-        enemy     = 3,
-        portalIn  = 4,
-        portalOut = 5,
-        exit      = 6,
-        gold      = 7,
+        floor  = 0,
+        wall   = 1,
+        shop   = 2,
+        enemy  = 3,
+        portal = 4,   -- single portal; teleports player to a random floor tile
+        exit   = 6,
+        gold   = 7,
     },
 }
 
@@ -51,6 +50,13 @@ Config.player = {
     maxHp = 10,
     gold  = 0,
     speed = 10,     -- lerp speed (higher = snappier movement)
+
+    -- Step budget tuning (see grid_load BFS calculation)
+    -- stepMultiplier: how many times the BFS shortest path the player gets
+    -- lootBonusShop / lootBonusGold: extra steps per loot tile on the map
+    stepMultiplier = 2.5,
+    lootBonusShop  = 6,
+    lootBonusGold  = 3,
 
     -- Dice roll cutscene timing (seconds)
     dice = {
@@ -94,7 +100,7 @@ Config.camera = {
                     -- NOTE: camera.lua currently uses camera.speed, not camera.lerp.
                     --       Rename the field in camera.lua if you want "lerp" semantics (0-1).
     zoom    = 2,   --  1 = normal, 2 = zoom in, 0.5 = zoom out
-    --zoomSpeed = 5, -- optional smoothing
+    --zoomSpeed = 5, --  smoothing
 
      --viewTilesX = 9,
     --viewTilesY = 9,  --grid
@@ -111,7 +117,7 @@ Config.fog = {
 
 
 -- ---------------------------------------------------------------------------
---  DM (Dungeon Master)
+--  DM (Dungeon Master) - WIP
 -- ---------------------------------------------------------------------------
 Config.dm = {
     essence      = 100,
@@ -194,7 +200,7 @@ Config.hud = {
         lowHpPct  = 0.4,    -- fraction below which bar turns red
     },
 
-    -- DM HUD
+    -- DM HUD - wip
     dm = {
         topBarH   = 40,
         botBarH   = 72,
@@ -392,11 +398,54 @@ Config.keys = {
 -- ---------------------------------------------------------------------------
 --  ASSETS
 -- ---------------------------------------------------------------------------
-Config.assets = {
-    tileSheet = "Art/SpriteSheet/tiles.png",
+-- ---------------------------------------------------------------------------
+--  FONT SIZES  — tweak these if text is too small or too large
+--  title/winlose use PixelFraktur; everything else uses FindersKeepers
+-- ---------------------------------------------------------------------------
+Config.fonts = {
+    -- PixelFraktur (titles)
+    menuTitle   = 52,   -- "BlindScribe" on the main menu
+    winLose     = 56,   -- "YOU WIN" / "YOU DIED"
+    mapTitle    = 20,   -- "Explorer's Map" header on the player map
+    mapBtn      = 16,   -- "Ink" / "Scratch" buttons on the player map
+
+    -- FindersKeepers (body / subtitles)
+    menuItem    = 26,   -- menu option entries (Single Player, etc.)
+    hudTitle    = 16,   -- section headers inside the HUD
+    hudStat     = 14,   -- stat labels (HP, MOVES LEFT, GOLD)
+    hudTiny     = 12,   -- small labels, slot numbers, footnotes
+    mapHint     = 11,   -- footer hint strip on the player map
+    debugInfo   = 14,   -- "Generating..." overlay during map gen
 }
 
--- Quad layout in the tile sheet
+Config.assets = {
+    -- Spritesheet fallback (used when individual sprite files are missing)
+    tileSheet = "Art/SpriteSheet/tiles.png",
+
+    -- Font files
+    -- PixelFraktur  -> titles   (menus, win/lose screens, map header, etc.)
+    -- FindersKeepers -> subtitles, labels, paragraphs, hints
+    fonts = {
+        title    = "Art/PixelFraktur.ttf",
+        subtitle = "Art/FindersKeepers.ttf",
+    },
+
+    -- Individual sprite files (optional — falls back to spritesheet if missing)
+    -- Place PNGs at these paths as you complete pixel art.
+    -- Each entry: { path = "...", fallbackSrcX = N, fallbackSrcY = M, w = 32, h = 32 }
+    sprites = {
+        player = { path = "Art/Sprites/player.png",    fallbackSrcX = 0,  fallbackSrcY = 32, w = 32, h = 32 },
+        floor  = { path = "Art/Sprites/floor.png",     fallbackSrcX = 0,  fallbackSrcY = 0,  w = 32, h = 32 },
+        wall   = { path = "Art/Sprites/wall.png",      fallbackSrcX = 32, fallbackSrcY = 0,  w = 32, h = 32 },
+        shop   = { path = "Art/Sprites/shop.png",      fallbackSrcX = 64, fallbackSrcY = 0,  w = 32, h = 32 },
+        enemy  = { path = "Art/Sprites/enemy.png",     fallbackSrcX = 96, fallbackSrcY = 0,  w = 32, h = 32 },
+        portal = { path = "Art/Sprites/portal.png", fallbackSrcX = 128, fallbackSrcY = 0, w = 32, h = 32 },
+        exit   = { path = "Art/Sprites/exit.png",      fallbackSrcX = 192, fallbackSrcY = 0,  w = 32, h = 32 },
+        gold   = { path = "Art/Sprites/gold.png",      fallbackSrcX = 224, fallbackSrcY = 0,  w = 32, h = 32 },
+    },
+}
+
+-- Quad layout in the tile sheet (used by fallback logic)
 -- Row 0 (srcY = 0)  → map tiles 0-7, each 32×32
 -- Row 1 (srcY = 32) → player sprite at column 0
 Config.assets.quads = {

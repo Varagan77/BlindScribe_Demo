@@ -1,6 +1,7 @@
-local HUD = {}
+local HUD   = {}
+local Fonts = require("Code.Scripts.ScriptUtil.fonts")
 
-local hudFont, tinyFont, titleFont
+local hudFont, tinyFont, titleFont, winLoseFont
 
 local Dice = require("Code.Scripts.ScriptStates.ScriptDice.diceEvent")
 
@@ -8,6 +9,9 @@ local Dice = require("Code.Scripts.ScriptStates.ScriptDice.diceEvent")
 local INV_SLOTS = 5
 local inventory = {}
 for i = 1, INV_SLOTS do inventory[i] = nil end
+
+-- Flash feedback when using an item
+local useFlash = { slot = nil, timer = 0, duration = 0.4 }
 
 local function drawPanel(x, y, w, h, bgCol, borderCol, r)
 	love.graphics.setColor(bgCol[1], bgCol[2], bgCol[3], bgCol[4] or 0.95)
@@ -18,20 +22,61 @@ local function drawPanel(x, y, w, h, bgCol, borderCol, r)
 end
 
 function hud_load()
-	hudFont   = love.graphics.newFont(11)
-	tinyFont  = love.graphics.newFont(9)
-	titleFont = love.graphics.newFont(13)
+	local CF    = Config.fonts
+	hudFont    = Fonts.body(CF.hudStat)
+	tinyFont   = Fonts.body(CF.hudTiny)
+	titleFont  = Fonts.body(CF.hudTitle)
+	winLoseFont = Fonts.title(CF.winLose)
 	inventory = {}
 	for i = 1, INV_SLOTS do inventory[i] = nil end
 end
 
-function hud_update(dt) end
+function hud_update(dt)
+	if useFlash.timer > 0 then
+		useFlash.timer = useFlash.timer - dt
+		if useFlash.timer <= 0 then
+			useFlash.slot = nil
+		end
+	end
+end
 
 function hud_addItem(item)
 	for i = 1, INV_SLOTS do
 		if not inventory[i] then inventory[i] = item; return true end
 	end
 	return false
+end
+
+-- Use item in slot idx; returns true if consumed
+function hud_useItem(idx)
+	if not inventory[idx] then return false end
+	local item = inventory[idx]
+
+	-- Apply the item effect
+	if item.effect == "heal" then
+		player.hp = math.min(Config.player.maxHp, player.hp + (item.value or 0))
+	elseif item.effect == "move" then
+		player.stepsLeft = player.stepsLeft + (item.value or 0)
+	elseif item.effect == "spawn_enemy" then
+		-- Wrath items: spawn an enemy nearby
+		local T  = Config.map.tiles
+		local px = math.floor(player.grid_x / 32)
+		local py = math.floor(player.grid_y / 32)
+		for dy = -2, 2 do
+			for dx = -2, 2 do
+				local nx, ny = px + dx, py + dy
+				if map and map[ny] and map[ny][nx] and map[ny][nx] == T.floor then
+					map[ny][nx] = T.enemy
+					break
+				end
+			end
+		end
+	end
+
+	inventory[idx] = nil
+	useFlash.slot  = idx
+	useFlash.timer = useFlash.duration
+	return true
 end
 
 function hud_draw()
@@ -66,6 +111,7 @@ function hud_draw()
 	local BTN_BG    = {0.13, 0.11, 0.20, 1.00}
 	local BTN_BOR   = {0.38, 0.33, 0.55, 1.00}
 	local ICON_BG   = {0.07, 0.06, 0.10, 1.00}
+	local FLASH_COL = {0.35, 0.90, 0.55, 1.00}
 
 	local PAD        = 8
 	local CONSOLE_H  = 90
@@ -126,16 +172,37 @@ function hud_draw()
 	love.graphics.setColor(TEXT[1], TEXT[2], TEXT[3])
 	love.graphics.printf(hp .. " / " .. maxHp, STATS_X + 24, statY, HP_BAR_W, "center")
 
-	-- Moves
+	-- Steps remaining bar (colour-coded by urgency)
 	statY = statY + HP_BAR_H + 7
+	local stepsLeft  = player.stepsLeft  or 0
+	local stepBudget = _G.stepBudget     or math.max(1, stepsLeft)
+	local stepPct    = math.max(0, math.min(1, stepsLeft / stepBudget))
+	local STEP_BAR_W = 150
+	local STEP_BAR_H = 10
+
 	love.graphics.setFont(hudFont)
 	love.graphics.setColor(LABEL[1], LABEL[2], LABEL[3])
-	love.graphics.print("MOVES LEFT", STATS_X, statY)
+	love.graphics.print("STEPS", STATS_X, statY + 1)
+
+	love.graphics.setColor(0.09, 0.08, 0.12)
+	love.graphics.rectangle("fill", STATS_X + 46, statY, STEP_BAR_W, STEP_BAR_H, 2, 2)
+
+	local stepFill
+	if stepPct < 0.20 then stepFill = DANGER
+	elseif stepPct < 0.40 then stepFill = HP_ORANGE
+	else stepFill = {0.35, 0.75, 0.95} end   -- calm blue when safe
+	love.graphics.setColor(stepFill[1], stepFill[2], stepFill[3])
+	love.graphics.rectangle("fill", STATS_X + 46, statY, STEP_BAR_W * stepPct, STEP_BAR_H, 2, 2)
+	love.graphics.setColor(BORDER[1], BORDER[2], BORDER[3])
+	love.graphics.setLineWidth(1)
+	love.graphics.rectangle("line", STATS_X + 46, statY, STEP_BAR_W, STEP_BAR_H, 2, 2)
+
+	love.graphics.setFont(tinyFont)
 	love.graphics.setColor(TEXT[1], TEXT[2], TEXT[3])
-	love.graphics.print("  " .. tostring(player.movePoints or 0), STATS_X + 80, statY)
+	love.graphics.printf(stepsLeft .. " / " .. stepBudget, STATS_X + 46, statY, STEP_BAR_W, "center")
 
 	-- Gold
-	statY = statY + 14
+	statY = statY + STEP_BAR_H + 7
 	love.graphics.setColor(GOLD_COL[1], GOLD_COL[2], GOLD_COL[3])
 	love.graphics.print("GOLD", STATS_X, statY)
 	love.graphics.setColor(TEXT[1], TEXT[2], TEXT[3])
@@ -152,15 +219,28 @@ function hud_draw()
 		local sx = HOTBAR_X + (i - 1) * (SLOT_SIZE + SLOT_GAP)
 		local sy = HOTBAR_Y
 
+		-- Flash when used
+		local isFlashing = useFlash.slot == i and useFlash.timer > 0
+		local flashAlpha = isFlashing and (useFlash.timer / useFlash.duration) or 0
+
 		-- Slot shadow/depth
 		love.graphics.setColor(0, 0, 0, 0.4)
 		love.graphics.rectangle("fill", sx + 2, sy + 2, SLOT_SIZE, SLOT_SIZE, 4, 4)
 
 		-- Slot bg
-		love.graphics.setColor(SLOT_BG[1], SLOT_BG[2], SLOT_BG[3])
+		if isFlashing then
+			love.graphics.setColor(
+				SLOT_BG[1] + flashAlpha * 0.2,
+				SLOT_BG[2] + flashAlpha * 0.4,
+				SLOT_BG[3] + flashAlpha * 0.2)
+		else
+			love.graphics.setColor(SLOT_BG[1], SLOT_BG[2], SLOT_BG[3])
+		end
 		love.graphics.rectangle("fill", sx, sy, SLOT_SIZE, SLOT_SIZE, 4, 4)
-		love.graphics.setColor(SLOT_BOR[1], SLOT_BOR[2], SLOT_BOR[3])
-		love.graphics.setLineWidth(1)
+
+		local borderCol = isFlashing and FLASH_COL or SLOT_BOR
+		love.graphics.setColor(borderCol[1], borderCol[2], borderCol[3], isFlashing and (0.5 + flashAlpha*0.5) or 1)
+		love.graphics.setLineWidth(isFlashing and 2 or 1)
 		love.graphics.rectangle("line", sx, sy, SLOT_SIZE, SLOT_SIZE, 4, 4)
 
 		-- Slot number label (dim, bottom-right corner)
@@ -169,17 +249,32 @@ function hud_draw()
 		love.graphics.print(tostring(i), sx + SLOT_SIZE - 9, sy + SLOT_SIZE - 12)
 
 		if inventory[i] then
-			love.graphics.setFont(hudFont)
-			love.graphics.setColor(GOLD_COL[1], GOLD_COL[2], GOLD_COL[3])
-			local name = (inventory[i].name or "?"):sub(1, 4)
-			love.graphics.printf(name, sx, sy + SLOT_SIZE / 2 - 6, SLOT_SIZE, "center")
+			local item = inventory[i]
+			love.graphics.setFont(tinyFont)
+
+			-- Colour by effect type
+			local itemCol
+			if item.effect == "heal" then itemCol = {0.35, 0.90, 0.55}
+			elseif item.effect == "move" then itemCol = {0.40, 0.70, 1.00}
+			elseif item.effect == "spawn_enemy" then itemCol = {1.00, 0.40, 0.35}
+			else itemCol = GOLD_COL end
+
+			love.graphics.setColor(itemCol[1], itemCol[2], itemCol[3])
+			local name = (item.name or "?"):sub(1, 7)
+			love.graphics.printf(name, sx + 2, sy + 8, SLOT_SIZE - 4, "center")
+
+			-- Price tag tiny
+			love.graphics.setColor(GOLD_COL[1], GOLD_COL[2], GOLD_COL[3], 0.6)
+			if item.price then
+				love.graphics.printf(item.price .. "g", sx, sy + SLOT_SIZE - 22, SLOT_SIZE - 4, "center")
+			end
 		end
 	end
 
 	-- Hotbar label
 	love.graphics.setFont(tinyFont)
 	love.graphics.setColor(LABEL[1], LABEL[2], LABEL[3], 0.5)
-	love.graphics.printf("INVENTORY", HOTBAR_X, CONSOLE_Y + 4, HOTBAR_W, "center")
+	love.graphics.printf("INVENTORY  [1-5 to use]", HOTBAR_X, CONSOLE_Y + 4, HOTBAR_W, "center")
 
 	-- ── MAP button ────────────────────────────────────────────────────
 	local BTN_W = 82
@@ -193,7 +288,7 @@ function hud_draw()
 	love.graphics.printf("MAP", BTN_X, BTN_Y + 7, BTN_W, "center")
 	love.graphics.setFont(tinyFont)
 	love.graphics.setColor(LABEL[1], LABEL[2], LABEL[3])
-	love.graphics.printf("DRAW MAP", BTN_X, BTN_Y + 27, BTN_W, "center")
+	love.graphics.printf("[M] DRAW", BTN_X, BTN_Y + 27, BTN_W, "center")
 
 	-- Footer
 	love.graphics.setFont(tinyFont)
@@ -201,17 +296,27 @@ function hud_draw()
 	love.graphics.printf("PLAYER CONSOLE", 0, sh - 11, sw, "center")
 
 	-- ── Win / Lose overlays ───────────────────────────────────────────
-	love.graphics.setFont(titleFont)
 	if gameState == "win" then
 		love.graphics.setColor(0, 0, 0, 0.78)
 		love.graphics.rectangle("fill", 0, 0, sw, sh)
+		love.graphics.setFont(winLoseFont)
 		love.graphics.setColor(ACCENT[1], ACCENT[2], ACCENT[3])
-		love.graphics.printf("YOU WIN\n\nPress ESC to return to menu", 0, sh / 2 - 40, sw, "center")
+		love.graphics.printf("YOU WIN", 0, sh / 2 - 60, sw, "center")
+		love.graphics.setFont(titleFont)
+		love.graphics.setColor(TEXT[1], TEXT[2], TEXT[3])
+		love.graphics.printf("Press ESC to return to menu", 0, sh / 2 + 20, sw, "center")
 	elseif gameState == "lose" then
 		love.graphics.setColor(0, 0, 0, 0.78)
 		love.graphics.rectangle("fill", 0, 0, sw, sh)
+		love.graphics.setFont(winLoseFont)
 		love.graphics.setColor(DANGER[1], DANGER[2], DANGER[3])
-		love.graphics.printf("YOU DIED\n\nPress ESC to return to menu", 0, sh / 2 - 40, sw, "center")
+		love.graphics.printf("SOUL DEVOURED", 0, sh / 2 - 70, sw, "center")
+		love.graphics.setFont(titleFont)
+		love.graphics.setColor(TEXT[1], TEXT[2], TEXT[3])
+		love.graphics.printf("The dungeon fed on your every step.", 0, sh / 2 + 10, sw, "center")
+		love.graphics.setFont(hudFont)
+		love.graphics.setColor(LABEL[1], LABEL[2], LABEL[3])
+		love.graphics.printf("Press ESC to return to menu", 0, sh / 2 + 38, sw, "center")
 	end
 
 	love.graphics.setColor(1, 1, 1)

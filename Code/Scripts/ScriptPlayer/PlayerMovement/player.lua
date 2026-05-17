@@ -1,9 +1,7 @@
-local playerSprite
-local playerQuad
-
-local Dice = require("Code.Scripts.ScriptStates.ScriptDice.diceEvent")
+local Dice      = require("Code.Scripts.ScriptStates.ScriptDice.diceEvent")
 local Encounter = require("Code.Scripts.ScriptPlayer.PlayerEncounter.playerEncounterEvent")
-local TileSys = require("Code.Managers.TileManager.tileSys")
+local TileSys   = require("Code.Managers.TileManager.tileSys")
+local Sprites   = require("Code.Scripts.ScriptUtil.sprites")
 
 -- 'player' is intentionally a global so grid.lua, hud, camera etc. can all read it
 
@@ -21,13 +19,9 @@ function player_load()
 		gold = PC.gold,
 		damageTaken = 0,
 		movePoints = 0,
+		stepsLeft = stepBudget or 60,   -- dungeon feeds on each step taken
 		shopVisited = false,
-		portalUsed = false,
 	}
-
-	local AQ = Config.assets.quads.playerTile
-	playerSprite = love.graphics.newImage("Art/SpriteSheet/tiles.png")
-	playerQuad = love.graphics.newQuad(AQ.srcX,AQ.srcY,AQ.w,AQ.h,playerSprite:getDimensions())
 
 	Dice.load(Config, {})
 end
@@ -45,7 +39,7 @@ end
 
 function player_draw()
 	love.graphics.setColor(1,1,1)
-	love.graphics.draw(playerSprite, playerQuad, player.act_x, player.act_y)
+	Sprites.draw("player", player.act_x, player.act_y)
 end
 
 function player_keypressed(key)
@@ -67,6 +61,7 @@ function player_keypressed(key)
 		player.grid_y = y * 32
 
 		player.movePoints = player.movePoints + 1
+		player.stepsLeft  = player.stepsLeft  - 1
 		fog_update(x,y)
 
 		local tile = map[y][x]
@@ -74,6 +69,11 @@ function player_keypressed(key)
 
 		if result then
 			Encounter.start(result)
+		end
+
+		-- Dungeon consumed the last step — soul devoured
+		if player.stepsLeft <= 0 and gameState == "newGame" then
+			gameState = "lose"
 		end
 	end
 end
