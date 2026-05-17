@@ -132,7 +132,7 @@ Try not to cry
     ├───SceneStartupGame
     └───SceneWinGame
 
-    PHASE 1 – SAFE CLEANUP (no gameplay changes)
+PHASE 1 – SAFE CLEANUP (no gameplay changes)
 
 Centralize all config usage through Config.map, Config.player, Config.keys
 Remove all hardcoded values like 32, speeds, tile IDs from logic files

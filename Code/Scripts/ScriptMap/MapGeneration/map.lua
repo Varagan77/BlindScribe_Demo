@@ -91,19 +91,16 @@ function M.generate(width, height)
 
 	local pool = buildPool(map, width, height)
 
-	local px, py = pop(pool)   -- spawn
+	local px, py = pop(pool)   -- player spawn
 
-	local ex, ey = pop(pool)
+	local ex, ey = pop(pool)   -- exit
 	map[ey][ex] = T.exit
 	log[#log+1] = {x=ex, y=ey, v=T.exit}
 
-	local p1x, p1y = pop(pool)
-	map[p1y][p1x] = T.portalIn
-	log[#log+1] = {x=p1x, y=p1y, v=T.portalIn}
-
-	local p2x, p2y = pop(pool)
-	map[p2y][p2x] = T.portalOut
-	log[#log+1] = {x=p2x, y=p2y, v=T.portalOut}
+	-- Single portal — teleports player to a random floor tile on use
+	local portX, portY = pop(pool)
+	map[portY][portX] = T.portal
+	log[#log+1] = {x=portX, y=portY, v=T.portal}
 
 	for i = 1, MC.shopCount do
 		local sx, sy = pop(pool)
@@ -125,7 +122,7 @@ function M.generate(width, height)
 		log[#log+1] = {x=x, y=y, v=T.gold}
 	end
 
-	return map, px, py, log
+	return map, px, py, log, ex, ey
 end
 
 return M
